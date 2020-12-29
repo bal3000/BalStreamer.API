@@ -8,6 +8,7 @@ import (
 
 	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/controllers"
+	"github.com/bal3000/BalStreamer.API/helpers"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/streadway/amqp"
@@ -28,15 +29,23 @@ func main() {
 	defer db.Close()
 	log.Println("Connected to DB")
 
-	conn := connectToRabbitMQ()
-	defer conn.Close()
-	ch, err := conn.Channel()
-	if err != nil {
-		panic(err)
+	//setup rabbit
+	rabbit := helpers.RabbitMQ{
+		URL:          "amqp://guest:guest@localhost:5672/",
+		QueueName:    "caster-q",
+		ExchangeName: "bal-streamer-caster",
+		Durable:      true,
 	}
+
+	conn := rabbit.ConnectToRabbitMQ()
+	defer conn.Close()
+
+	ch := createChannel(conn)
 	defer ch.Close()
 
-	cast := controllers.NewCastController(db, ch)
+	rabbit.CreateExchange(ch)
+
+	cast := controllers.NewCastController(db, ch, rabbit.ExchangeName)
 	router := mux.NewRouter()
 
 	// defer func() {
@@ -61,12 +70,10 @@ func main() {
 	log.Fatalln(http.ListenAndServe(":8080", router))
 }
 
-func connectToRabbitMQ() *amqp.Connection {
-	log.Println("Connecting to RabbitMQ")
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+func createChannel(conn *amqp.Connection) *amqp.Channel {
+	ch, err := conn.Channel()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	log.Println("Connected to RabbitMQ")
-	return conn
+	return ch
 }
