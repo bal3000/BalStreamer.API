@@ -2,7 +2,7 @@ package configuration
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -13,15 +13,17 @@ type Configuration struct {
 
 // ReadConfig reads the json file and popluates the Configuration struct
 func ReadConfig() Configuration {
-	file, _ := os.Open("config.json")
+	file, _ := os.Open("./config.json")
 	defer file.Close()
+	log.Println("Loading in config file")
 
 	decoder := json.NewDecoder(file)
 	configuration := Configuration{}
 	err := decoder.Decode(&configuration)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
+	log.Println("Loaded in config file")
 	return configuration
 }
