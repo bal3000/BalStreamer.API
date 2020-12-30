@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"time"
@@ -14,14 +13,13 @@ import (
 
 // CastController - controller for casting to chromecast
 type CastController struct {
-	Database     *sql.DB
 	RabbitMQ     *amqp.Channel
 	ExchangeName string
 }
 
 // NewCastController - constructor to return new controller while passing in dependacies
-func NewCastController(db *sql.DB, ch *amqp.Channel, en string) *CastController {
-	return &CastController{Database: db, RabbitMQ: ch, ExchangeName: en}
+func NewCastController(ch *amqp.Channel, en string) *CastController {
+	return &CastController{RabbitMQ: ch, ExchangeName: en}
 }
 
 // CastStream - streams given data to given chromecast

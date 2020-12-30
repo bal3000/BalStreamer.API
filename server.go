@@ -50,7 +50,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	cast := controllers.NewCastController(db, ch, rabbit.ExchangeName)
+	cast := controllers.NewCastController(ch, rabbit.ExchangeName)
 	// Routes
 	controllers.CastRoutes(e, cast)
 
