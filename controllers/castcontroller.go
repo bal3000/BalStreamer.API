@@ -2,11 +2,11 @@ package controllers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/bal3000/BalStreamer.API/helpers"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
@@ -34,30 +34,13 @@ func (controller *CastController) CastStream(c echo.Context) error {
 	}
 
 	// Send to chromecast
-	cast := models.StreamToChromecastEvent{
+	cast := &models.StreamToChromecastEvent{
 		ChromeCastToStream: castCommand.Chromecast,
 		Stream:             castCommand.StreamURL,
 		StreamDate:         time.Now(),
 	}
 
-	b, err := json.Marshal(cast)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = controller.RabbitMQ.Publish(
-		controller.ExchangeName, // exchange
-		"",                      // routing key
-		false,                   // mandatory
-		false,                   // immediate
-		amqp.Publishing{
-			ContentType: "application/vnd.masstransit+json",
-			Body:        []byte(b),
-		})
-
-	if err != nil {
-		log.Fatalln(err)
-	}
+	helpers.SendMessage(controller.RabbitMQ, cast, controller.ExchangeName)
 
 	return c.NoContent(http.StatusNoContent)
 }

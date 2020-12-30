@@ -3,6 +3,7 @@ package helpers
 import (
 	"log"
 
+	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/streadway/amqp"
 )
 
@@ -33,6 +34,28 @@ func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
 		nil,             // arguments
 	)
 	failOnError(err, "Failed to declare an exchange")
+}
+
+// SendMessage sends the given message
+func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName string) {
+	b, err := message.TransformMessage()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = ch.Publish(
+		exchangeName, // exchange
+		"",           // routing key
+		false,        // mandatory
+		false,        // immediate
+		amqp.Publishing{
+			ContentType: "application/vnd.masstransit+json",
+			Body:        []byte(b),
+		})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func failOnError(err error, msg string) {
