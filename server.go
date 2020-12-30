@@ -31,7 +31,7 @@ func main() {
 	//setup rabbit
 	rabbit := helpers.RabbitMQ{
 		URL:          "amqp://guest:guest@localhost:5672/",
-		QueueName:    "caster-q",
+		QueueName:    "bal-streamer-api",
 		ExchangeName: "bal-streamer-api",
 		Durable:      true,
 	}
@@ -43,6 +43,7 @@ func main() {
 	defer ch.Close()
 
 	rabbit.CreateExchange(ch)
+	rabbit.DeclareAndBindQueue(ch)
 
 	e := echo.New()
 
@@ -51,8 +52,11 @@ func main() {
 	e.Use(middleware.Recover())
 
 	cast := controllers.NewCastController(ch, rabbit.ExchangeName)
+	chrome := controllers.NewChromecastController(db, ch, rabbit.QueueName)
+
 	// Routes
 	controllers.CastRoutes(e, cast)
+	controllers.ChromecastRoutes(e, chrome)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))

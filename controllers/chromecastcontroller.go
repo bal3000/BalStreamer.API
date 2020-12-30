@@ -23,8 +23,8 @@ type ChromecastController struct {
 }
 
 // NewChromecastController creates a new ref to chromecast controller
-func NewChromecastController(db *sql.DB, ch *amqp.Channel) *ChromecastController {
-	return &ChromecastController{Database: db, RabbitMQ: ch}
+func NewChromecastController(db *sql.DB, ch *amqp.Channel, qn string) *ChromecastController {
+	return &ChromecastController{Database: db, RabbitMQ: ch, QueueName: qn}
 }
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
