@@ -23,11 +23,27 @@ type StreamToChromecastEvent struct {
 	StreamDate         time.Time `json:"streamDate"`
 }
 
+// StopPlayingStreamEvent the stop cast event
+type StopPlayingStreamEvent struct {
+	ChromeCastToStop string    `json:"chromeCastToStop"`
+	StopDateTime     time.Time `json:"stopDateTime"`
+}
+
 // TransformMessage transforms the message to a masstransit one and then turns into JSON
 func (message *StreamToChromecastEvent) TransformMessage() ([]byte, error) {
 	mtEvent := massTransitEvent{
 		Message:     message,
-		MessageType: []string{""},
+		MessageType: []string{"urn:message:BalStreamer.Shared.EventBus.Events:StreamToChromecastEvent"},
+	}
+
+	return json.Marshal(mtEvent)
+}
+
+// TransformMessage transforms the message to a masstransit one and then turns into JSON
+func (message *StopPlayingStreamEvent) TransformMessage() ([]byte, error) {
+	mtEvent := massTransitEvent{
+		Message:     message,
+		MessageType: []string{"urn:message:BalStreamer.Shared.EventBus.Events:StopPlayingStreamEvent"},
 	}
 
 	return json.Marshal(mtEvent)

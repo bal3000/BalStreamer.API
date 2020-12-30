@@ -38,10 +38,13 @@ func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
 
 // SendMessage sends the given message
 func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName string) {
+	log.Printf("Sending to exchange %s in rabbitMQ", exchangeName)
 	b, err := message.TransformMessage()
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	log.Println("Converted message to JSON and sending")
 
 	err = ch.Publish(
 		exchangeName, // exchange
@@ -56,6 +59,8 @@ func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName str
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	log.Println("Message sent")
 }
 
 func failOnError(err error, msg string) {

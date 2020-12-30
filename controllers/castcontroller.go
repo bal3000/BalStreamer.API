@@ -40,7 +40,7 @@ func (controller *CastController) CastStream(c echo.Context) error {
 		StreamDate:         time.Now(),
 	}
 
-	helpers.SendMessage(controller.RabbitMQ, cast, controller.ExchangeName)
+	go helpers.SendMessage(controller.RabbitMQ, cast, controller.ExchangeName)
 
 	return c.NoContent(http.StatusNoContent)
 }
@@ -53,6 +53,14 @@ func (controller *CastController) StopStream(c echo.Context) error {
 		log.Println(err)
 		return err
 	}
+
+	// Send to chromecast
+	cast := &models.StopPlayingStreamEvent{
+		ChromeCastToStop: stopStreamCommand.ChromeCastToStop,
+		StopDateTime:     stopStreamCommand.StopDateTime,
+	}
+
+	go helpers.SendMessage(controller.RabbitMQ, cast, controller.ExchangeName)
 
 	return c.NoContent(http.StatusAccepted)
 }
