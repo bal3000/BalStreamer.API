@@ -36,6 +36,28 @@ func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
 	failOnError(err, "Failed to declare an exchange")
 }
 
+// DeclareAndBindQueue declares a queue if one does not exist and then binds it to the channel
+func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
+	q, err := ch.QueueDeclare(
+		mq.QueueName, // name
+		mq.Durable,   // durable
+		false,        // delete when unused
+		true,         // exclusive
+		false,        // no-wait
+		nil,          // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	err = ch.QueueBind(
+		q.Name,          // queue name
+		"",              // routing key
+		mq.ExchangeName, // exchange
+		false,
+		nil,
+	)
+	failOnError(err, "Failed to bind a queue")
+}
+
 // SendMessage sends the given message
 func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName string) {
 	log.Printf("Sending to exchange %s in rabbitMQ", exchangeName)

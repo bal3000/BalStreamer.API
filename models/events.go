@@ -29,6 +29,16 @@ type StopPlayingStreamEvent struct {
 	StopDateTime     time.Time `json:"stopDateTime"`
 }
 
+// ChromecastFoundEvent event when a chromecast is found
+type ChromecastFoundEvent struct {
+	Chromecast string `json:"chromecast"`
+}
+
+// ChromecastLostEvent event when a chromecast is lost
+type ChromecastLostEvent struct {
+	Chromecast string `json:"chromecast"`
+}
+
 // TransformMessage transforms the message to a masstransit one and then turns into JSON
 func (message *StreamToChromecastEvent) TransformMessage() ([]byte, error) {
 	mtEvent := massTransitEvent{
