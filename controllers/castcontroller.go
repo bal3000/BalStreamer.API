@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bal3000/BalStreamer.API/models"
+	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
 )
 
@@ -24,11 +25,12 @@ func NewCastController(db *sql.DB, ch *amqp.Channel, en string) *CastController 
 }
 
 // CastStream - streams given data to given chromecast
-func (controller *CastController) CastStream(res http.ResponseWriter, req *http.Request) {
+func (controller *CastController) CastStream(c echo.Context) error {
 	castCommand := new(models.StreamToCast)
-	if err := convertJSON(req, castCommand); err != nil {
+
+	if err := c.Bind(castCommand); err != nil {
 		log.Println(err)
-		respondWithError(res, http.StatusInternalServerError, err.Error())
+		return err
 	}
 
 	// Send to chromecast
@@ -57,29 +59,17 @@ func (controller *CastController) CastStream(res http.ResponseWriter, req *http.
 		log.Fatalln(err)
 	}
 
-	respondWithJSON(res, http.StatusNoContent, nil)
+	return c.NoContent(http.StatusNoContent)
 }
 
-func convertJSON(r *http.Request, toObj interface{}) error {
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(toObj)
-	defer r.Body.Close()
-	return err
-}
+// StopStream endpoint sends the command to stop the stream on the given chromecast
+func (controller *CastController) StopStream(c echo.Context) error {
+	stopStreamCommand := new(models.StopPlayingStream)
 
-func respondWithError(w http.ResponseWriter, code int, message string) {
-	respondWithJSON(w, code, map[string]string{"error": message})
-}
-
-func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	if payload != nil {
-		response, err := json.Marshal(payload)
-		if err != nil {
-			log.Println(err)
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-		}
-		w.Write(response)
+	if err := c.Bind(stopStreamCommand); err != nil {
+		log.Println(err)
+		return err
 	}
+
+	return c.NoContent(http.StatusAccepted)
 }
