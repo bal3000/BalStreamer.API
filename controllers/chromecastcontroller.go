@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/gorilla/websocket"
@@ -35,6 +36,13 @@ func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error 
 	}
 	defer ws.Close()
 
+	// Prepare insert statement
+	insert, insertErr := controller.Database.Prepare("INSERT INTO casterDB VALUES ($1,$2)")
+	if insertErr != nil {
+		panic(insertErr)
+	}
+	defer insert.Close()
+
 	msgs, err := controller.RabbitMQ.Consume(
 		controller.QueueName, // queue
 		"",                   // consumer
@@ -53,8 +61,13 @@ func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error 
 	go func() {
 		chromecastEvent := new(models.ChromecastFoundEvent)
 		for d := range msgs {
+			// need this to test how I can tell the difference between add and remove events
 			log.Println("Rabbit message: ", msgs)
 			json.Unmarshal(d.Body, chromecastEvent)
+
+			// insert into db - might make this a proc to determine if it already exists and if so update time
+			insert.Exec(chromecastEvent.Chromecast, time.Now())
+
 			err := ws.WriteJSON(chromecastEvent)
 			if err != nil {
 				c.Logger().Error(err)
