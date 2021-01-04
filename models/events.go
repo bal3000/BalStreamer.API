@@ -30,7 +30,7 @@ type StopPlayingStreamEvent struct {
 	StopDateTime     time.Time `json:"stopDateTime"`
 }
 
-// ChromecastFoundEvent event when a chromecast is found
+// ChromecastEvent event when a chromecast is found
 type ChromecastEvent struct {
 	EventType  string      `json:"eventType"`
 	Chromecast interface{} `json:"chromecast"`
