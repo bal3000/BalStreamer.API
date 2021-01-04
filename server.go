@@ -32,7 +32,7 @@ func main() {
 	rabbit := helpers.RabbitMQ{
 		URL:          "amqp://guest:guest@localhost:5672/",
 		QueueName:    "bal-streamer-api",
-		ExchangeName: "bal-streamer-api",
+		ExchangeName: "bal-streamer-caster",
 		Durable:      true,
 	}
 

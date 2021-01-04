@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/bal3000/BalStreamer.API/models"
@@ -13,7 +13,9 @@ import (
 )
 
 var (
-	upgrader = websocket.Upgrader{}
+	upgrader       = websocket.Upgrader{}
+	foundEventType = "ChromecastFoundEvent"
+	lostEventType  = "ChromecastLostEvent"
 )
 
 // ChromecastController the controller for the websockets
@@ -30,6 +32,7 @@ func NewChromecastController(db *sql.DB, ch *amqp.Channel, qn string) *Chromecas
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
 func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
@@ -37,7 +40,7 @@ func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error 
 	defer ws.Close()
 
 	// Prepare insert statement
-	insert, insertErr := controller.Database.Prepare("INSERT INTO casterDB VALUES ($1,$2)")
+	insert, insertErr := controller.Database.Prepare("INSERT INTO public.\"Chromecasts\" VALUES ($1,$2)")
 	if insertErr != nil {
 		panic(insertErr)
 	}
@@ -66,16 +69,26 @@ func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error 
 }
 
 func waitAndProcessMsg(msgs <-chan amqp.Delivery, insert *sql.Stmt, ws *websocket.Conn, c echo.Context) {
-	chromecastEvent := new(models.ChromecastFoundEvent)
+	mtEvent := new(models.MassTransitEvent)
 	for d := range msgs {
 		// need this to test how I can tell the difference between add and remove events
-		log.Println("Rabbit message: ", msgs)
-		json.Unmarshal(d.Body, chromecastEvent)
+		log.Println("Rabbit message: ", string(d.Body))
+
+		// convert mass transit message
+		chromecastEvent, err := mtEvent.RetrieveMessage(d.Body)
+		if err != nil {
+			c.Logger().Error(err)
+		}
 
 		// insert into db - might make this a proc to determine if it already exists and if so update time
-		insert.Exec(chromecastEvent.Chromecast, time.Now())
+		switch chromecastEvent.EventType {
+		case foundEventType:
+			insert.Exec(chromecastEvent.Chromecast, time.Now())
+		case lostEventType:
+			insert.Exec(chromecastEvent.Chromecast, time.Now())
+		}
 
-		err := ws.WriteJSON(chromecastEvent)
+		err = ws.WriteJSON(chromecastEvent)
 		if err != nil {
 			c.Logger().Error(err)
 		}

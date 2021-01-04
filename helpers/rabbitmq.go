@@ -42,7 +42,7 @@ func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
 		mq.QueueName, // name
 		mq.Durable,   // durable
 		false,        // delete when unused
-		true,         // exclusive
+		false,        // exclusive
 		false,        // no-wait
 		nil,          // arguments
 	)
