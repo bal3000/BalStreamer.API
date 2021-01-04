@@ -59,11 +59,11 @@ func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
 }
 
 // SendMessage sends the given message
-func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName string) {
+func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName string) error {
 	log.Printf("Sending to exchange %s in rabbitMQ", exchangeName)
 	b, err := message.TransformMessage()
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	log.Println("Converted message to JSON and sending")
@@ -79,10 +79,11 @@ func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName str
 		})
 
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 
 	log.Println("Message sent")
+	return nil
 }
 
 func failOnError(err error, msg string) {

@@ -58,24 +58,26 @@ func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error 
 
 	forever := make(chan bool)
 
-	go func() {
-		chromecastEvent := new(models.ChromecastFoundEvent)
-		for d := range msgs {
-			// need this to test how I can tell the difference between add and remove events
-			log.Println("Rabbit message: ", msgs)
-			json.Unmarshal(d.Body, chromecastEvent)
-
-			// insert into db - might make this a proc to determine if it already exists and if so update time
-			insert.Exec(chromecastEvent.Chromecast, time.Now())
-
-			err := ws.WriteJSON(chromecastEvent)
-			if err != nil {
-				c.Logger().Error(err)
-			}
-		}
-	}()
+	go waitAndProcessMsg(msgs, insert, ws, c)
 
 	<-forever
 
 	return nil
+}
+
+func waitAndProcessMsg(msgs <-chan amqp.Delivery, insert *sql.Stmt, ws *websocket.Conn, c echo.Context) {
+	chromecastEvent := new(models.ChromecastFoundEvent)
+	for d := range msgs {
+		// need this to test how I can tell the difference between add and remove events
+		log.Println("Rabbit message: ", msgs)
+		json.Unmarshal(d.Body, chromecastEvent)
+
+		// insert into db - might make this a proc to determine if it already exists and if so update time
+		insert.Exec(chromecastEvent.Chromecast, time.Now())
+
+		err := ws.WriteJSON(chromecastEvent)
+		if err != nil {
+			c.Logger().Error(err)
+		}
+	}
 }
