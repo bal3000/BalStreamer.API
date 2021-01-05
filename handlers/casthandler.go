@@ -11,13 +11,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// CastController - controller for casting to chromecast
+// CastHandler - controller for casting to chromecast
 type CastHandler struct {
 	RabbitMQ     *amqp.Channel
 	ExchangeName string
 }
 
-// NewCastController - constructor to return new controller while passing in dependacies
+// NewCastHandler - constructor to return new controller while passing in dependacies
 func NewCastHandler(ch *amqp.Channel, en string) *CastHandler {
 	return &CastHandler{RabbitMQ: ch, ExchangeName: en}
 }

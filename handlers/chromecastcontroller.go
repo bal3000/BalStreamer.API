@@ -18,14 +18,14 @@ var (
 	lostEventType  = "ChromecastLostEvent"
 )
 
-// ChromecastController the controller for the websockets
+// ChromecastHandler the controller for the websockets
 type ChromecastHandler struct {
 	Database  *sql.DB
 	RabbitMQ  *amqp.Channel
 	QueueName string
 }
 
-// NewChromecastController creates a new ref to chromecast controller
+// NewChromecastHandler creates a new ref to chromecast controller
 func NewChromecastHandler(db *sql.DB, ch *amqp.Channel, qn string) *ChromecastHandler {
 	return &ChromecastHandler{Database: db, RabbitMQ: ch, QueueName: qn}
 }
