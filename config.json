@@ -1,3 +1,7 @@
 {
-    "connectionString": "user=postgres password=qwerty host=127.0.0.1 port=5432 dbname=casterDB sslmode=disable"
+    "connectionString": "user=postgres password=qwerty host=127.0.0.1 port=5432 dbname=casterDB sslmode=disable",
+    "rabbitUrl": "amqp://guest:guest@localhost:5672/",
+    "exchangeName": "bal-streamer-caster",
+    "queueName": "bal-streamer-api",
+    "durable": true
 }

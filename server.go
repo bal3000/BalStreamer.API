@@ -5,12 +5,12 @@ import (
 	"log"
 
 	"github.com/bal3000/BalStreamer.API/configuration"
-	"github.com/bal3000/BalStreamer.API/controllers"
+	"github.com/bal3000/BalStreamer.API/handlers"
 	"github.com/bal3000/BalStreamer.API/helpers"
+	"github.com/bal3000/BalStreamer.API/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
-	"github.com/streadway/amqp"
 )
 
 var config configuration.Configuration
@@ -29,17 +29,10 @@ func main() {
 	log.Println("Connected to DB")
 
 	//setup rabbit
-	rabbit := helpers.RabbitMQ{
-		URL:          "amqp://guest:guest@localhost:5672/",
-		QueueName:    "bal-streamer-api",
-		ExchangeName: "bal-streamer-caster",
-		Durable:      true,
-	}
+	rabbit := helpers.NewRabbitMQ(&config)
+	defer rabbit.Connection.Close()
 
-	conn := rabbit.ConnectToRabbitMQ()
-	defer conn.Close()
-
-	ch := createChannel(conn)
+	ch := rabbit.CreateChannel()
 	defer ch.Close()
 
 	rabbit.CreateExchange(ch)
@@ -51,21 +44,13 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	cast := controllers.NewCastController(ch, rabbit.ExchangeName)
-	chrome := controllers.NewChromecastController(db, ch, rabbit.QueueName)
+	cast := handlers.NewCastHandler(ch, config.ExchangeName)
+	chrome := handlers.NewChromecastHandler(db, ch, config.QueueName)
 
 	// Routes
-	controllers.CastRoutes(e, cast)
-	controllers.ChromecastRoutes(e, chrome)
+	routes.CastRoutes(e, cast)
+	routes.ChromecastRoutes(e, chrome)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
-}
-
-func createChannel(conn *amqp.Connection) *amqp.Channel {
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return ch
 }

@@ -3,35 +3,42 @@ package helpers
 import (
 	"log"
 
+	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/streadway/amqp"
 )
 
 // RabbitMQ - settings to create a connection
 type RabbitMQ struct {
-	URL          string
-	QueueName    string
-	ExchangeName string
-	Durable      bool
+	configuration *configuration.Configuration
+	Connection    *amqp.Connection
 }
 
-// ConnectToRabbitMQ - Connects to RabbitMQ
-func (mq *RabbitMQ) ConnectToRabbitMQ() *amqp.Connection {
-	conn, err := amqp.Dial(mq.URL)
+// NewRabbitMQ creates a new rabbit mq connection
+func NewRabbitMQ(config *configuration.Configuration) *RabbitMQ {
+	conn, err := amqp.Dial(config.RabbitURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
-	return conn
+
+	return &RabbitMQ{configuration: config, Connection: conn}
+}
+
+// CreateChannel creates a new channel
+func (mq *RabbitMQ) CreateChannel() *amqp.Channel {
+	ch, err := mq.Connection.Channel()
+	failOnError(err, "Failed to bind a queue")
+	return ch
 }
 
 // CreateExchange creates an exchange
 func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
 	err := ch.ExchangeDeclare(
-		mq.ExchangeName, // name
-		"fanout",        // type
-		mq.Durable,      // durable
-		false,           // auto-deleted
-		false,           // internal
-		false,           // no-wait
-		nil,             // arguments
+		mq.configuration.ExchangeName, // name
+		"fanout",                      // type
+		mq.configuration.Durable,      // durable
+		false,                         // auto-deleted
+		false,                         // internal
+		false,                         // no-wait
+		nil,                           // arguments
 	)
 	failOnError(err, "Failed to declare an exchange")
 }
@@ -39,19 +46,19 @@ func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
 // DeclareAndBindQueue declares a queue if one does not exist and then binds it to the channel
 func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
 	q, err := ch.QueueDeclare(
-		mq.QueueName, // name
-		mq.Durable,   // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		mq.configuration.QueueName, // name
+		mq.configuration.Durable,   // durable
+		false,                      // delete when unused
+		false,                      // exclusive
+		false,                      // no-wait
+		nil,                        // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
 	err = ch.QueueBind(
-		q.Name,          // queue name
-		"",              // routing key
-		mq.ExchangeName, // exchange
+		q.Name,                        // queue name
+		"",                            // routing key
+		mq.configuration.ExchangeName, // exchange
 		false,
 		nil,
 	)

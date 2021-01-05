@@ -1,4 +1,4 @@
-package controllers
+package handlers
 
 import (
 	"database/sql"
@@ -19,19 +19,19 @@ var (
 )
 
 // ChromecastController the controller for the websockets
-type ChromecastController struct {
+type ChromecastHandler struct {
 	Database  *sql.DB
 	RabbitMQ  *amqp.Channel
 	QueueName string
 }
 
 // NewChromecastController creates a new ref to chromecast controller
-func NewChromecastController(db *sql.DB, ch *amqp.Channel, qn string) *ChromecastController {
-	return &ChromecastController{Database: db, RabbitMQ: ch, QueueName: qn}
+func NewChromecastHandler(db *sql.DB, ch *amqp.Channel, qn string) *ChromecastHandler {
+	return &ChromecastHandler{Database: db, RabbitMQ: ch, QueueName: qn}
 }
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
-func (controller *ChromecastController) ChromecastUpdates(c echo.Context) error {
+func (controller *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {

@@ -1,4 +1,4 @@
-package controllers
+package handlers
 
 import (
 	"log"
@@ -12,18 +12,18 @@ import (
 )
 
 // CastController - controller for casting to chromecast
-type CastController struct {
+type CastHandler struct {
 	RabbitMQ     *amqp.Channel
 	ExchangeName string
 }
 
 // NewCastController - constructor to return new controller while passing in dependacies
-func NewCastController(ch *amqp.Channel, en string) *CastController {
-	return &CastController{RabbitMQ: ch, ExchangeName: en}
+func NewCastHandler(ch *amqp.Channel, en string) *CastHandler {
+	return &CastHandler{RabbitMQ: ch, ExchangeName: en}
 }
 
 // CastStream - streams given data to given chromecast
-func (controller *CastController) CastStream(c echo.Context) error {
+func (controller *CastHandler) CastStream(c echo.Context) error {
 	castCommand := new(models.StreamToCast)
 
 	if err := c.Bind(castCommand); err != nil {
@@ -44,7 +44,7 @@ func (controller *CastController) CastStream(c echo.Context) error {
 }
 
 // StopStream endpoint sends the command to stop the stream on the given chromecast
-func (controller *CastController) StopStream(c echo.Context) error {
+func (controller *CastHandler) StopStream(c echo.Context) error {
 	stopStreamCommand := new(models.StopPlayingStream)
 
 	if err := c.Bind(stopStreamCommand); err != nil {
