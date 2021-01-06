@@ -12,12 +12,12 @@ import (
 
 // LiveStreamHandler - handler for everything to do with the live stream API
 type LiveStreamHandler struct {
-	fixturesURL, streamsURL, apiKey string
+	liveStreamURL, apiKey string
 }
 
 // NewLiveStreamHandler - Creates a new instance of live stream handler
-func NewLiveStreamHandler(fURL string, sURL string, key string) *LiveStreamHandler {
-	return &LiveStreamHandler{fixturesURL: fURL, streamsURL: sURL, apiKey: key}
+func NewLiveStreamHandler(liveURL string, key string) *LiveStreamHandler {
+	return &LiveStreamHandler{liveStreamURL: liveURL, apiKey: key}
 }
 
 // GetFixtures - Gets the fixtures for the given sport and date range
@@ -26,7 +26,7 @@ func (handler *LiveStreamHandler) GetFixtures(c echo.Context) error {
 	fromDate := c.Param("fromDate")
 	toDate := c.Param("toDate")
 
-	url := fmt.Sprintf("%s/%s/%s/%s", handler.fixturesURL, sportType, fromDate, toDate)
+	url := fmt.Sprintf("%s/%s/%s/%s", handler.liveStreamURL, sportType, fromDate, toDate)
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
 	logErrors(c, err)

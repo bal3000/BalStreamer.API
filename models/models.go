@@ -16,15 +16,15 @@ type StopPlayingStream struct {
 
 // LiveFixtures is the model for the json returned from the live stream api
 type LiveFixtures struct {
-	StateName            string    `json:"stateName"`
-	UtcStart             time.Time `json:"utcStart"`
-	UtcEnd               time.Time `json:"utcEnd"`
-	Title                string    `json:"title"`
-	EventID              string    `json:"eventId"`
-	ContentTypeName      string    `json:"contentTypeName"`
-	TimerID              int       `json:"timerId"`
-	IsPrimary            bool      `json:"isPrimary"`
-	BroadcastChannelName string    `json:"broadcastChannelName"`
-	BroadcastNationName  string    `json:"broadcastNationName"`
-	SourceTypeName       string    `json:"sourceTypeName"`
+	StateName            string `json:"stateName"`
+	UtcStart             string `json:"utcStart"`
+	UtcEnd               string `json:"utcEnd"`
+	Title                string `json:"title"`
+	EventID              string `json:"eventId"`
+	ContentTypeName      string `json:"contentTypeName"`
+	TimerID              string `json:"timerId"`
+	IsPrimary            string `json:"isPrimary"`
+	BroadcastChannelName string `json:"broadcastChannelName"`
+	BroadcastNationName  string `json:"broadcastNationName"`
+	SourceTypeName       string `json:"sourceTypeName"`
 }

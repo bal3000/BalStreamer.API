@@ -4,7 +4,6 @@
     "exchangeName": "bal-streamer-caster",
     "queueName": "bal-streamer-api",
     "durable": true,
-    "fixturesUrl": "",
-    "streamsUrl": "",
+    "liveStreamUrl": "",
     "apiKey": ""
 }

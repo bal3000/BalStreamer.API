@@ -47,7 +47,7 @@ func main() {
 	// Handlers
 	cast := handlers.NewCastHandler(ch, config.ExchangeName)
 	chrome := handlers.NewChromecastHandler(db, ch, config.QueueName)
-	live := handlers.NewLiveStreamHandler(config.FixturesURL, config.StreamsURL, config.APIKey)
+	live := handlers.NewLiveStreamHandler(config.LiveStreamURL, config.APIKey)
 
 	// Routes
 	routes.CastRoutes(e, cast)

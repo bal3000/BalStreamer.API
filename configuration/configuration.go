@@ -13,8 +13,7 @@ type Configuration struct {
 	ExchangeName     string `json:"exchangeName"`
 	QueueName        string `json:"queueName"`
 	Durable          bool   `json:"durable"`
-	FixturesURL      string `json:"fixturesUrl"`
-	StreamsURL       string `json:"streamsUrl"`
+	LiveStreamURL    string `json:"liveStreamUrl"`
 	APIKey           string `json:"apiKey"`
 }
 
