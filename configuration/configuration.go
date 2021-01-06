@@ -13,6 +13,9 @@ type Configuration struct {
 	ExchangeName     string `json:"exchangeName"`
 	QueueName        string `json:"queueName"`
 	Durable          bool   `json:"durable"`
+	FixturesURL      string `json:"fixturesUrl"`
+	StreamsURL       string `json:"streamsUrl"`
+	APIKey           string `json:"apiKey"`
 }
 
 // ReadConfig reads the json file and popluates the Configuration struct

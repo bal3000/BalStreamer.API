@@ -3,5 +3,8 @@
     "rabbitUrl": "amqp://guest:guest@localhost:5672/",
     "exchangeName": "bal-streamer-caster",
     "queueName": "bal-streamer-api",
-    "durable": true
+    "durable": true,
+    "fixturesUrl": "",
+    "streamsUrl": "",
+    "apiKey": ""
 }

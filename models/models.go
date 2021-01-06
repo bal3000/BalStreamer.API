@@ -13,3 +13,18 @@ type StopPlayingStream struct {
 	ChromeCastToStop string    `json:"chromeCastToStop"`
 	StopDateTime     time.Time `json:"stopDateTime"`
 }
+
+// LiveFixtures is the model for the json returned from the live stream api
+type LiveFixtures struct {
+	StateName            string    `json:"stateName"`
+	UtcStart             time.Time `json:"utcStart"`
+	UtcEnd               time.Time `json:"utcEnd"`
+	Title                string    `json:"title"`
+	EventID              string    `json:"eventId"`
+	ContentTypeName      string    `json:"contentTypeName"`
+	TimerID              int       `json:"timerId"`
+	IsPrimary            bool      `json:"isPrimary"`
+	BroadcastChannelName string    `json:"broadcastChannelName"`
+	BroadcastNationName  string    `json:"broadcastNationName"`
+	SourceTypeName       string    `json:"sourceTypeName"`
+}
