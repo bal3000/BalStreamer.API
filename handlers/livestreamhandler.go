@@ -39,25 +39,46 @@ func (handler *LiveStreamHandler) GetFixtures(c echo.Context) error {
 	body, err := ioutil.ReadAll(resp.Body)
 	logErrors(c, err)
 
-	fixtures := convertFixtureResponse(body)
+	fixtures := &[]models.LiveFixtures{}
+	convertResponse(body, fixtures)
 
-	if len(fixtures) == 0 {
+	if len(*fixtures) == 0 {
 		return c.String(http.StatusNotFound, "No fixtures found")
 	}
-	return c.JSON(http.StatusOK, fixtures)
+	return c.JSON(http.StatusOK, *fixtures)
 }
 
-func convertFixtureResponse(body []byte) []models.LiveFixtures {
-	fixtures := &[]models.LiveFixtures{}
-	err := json.Unmarshal(body, fixtures)
+// GetStreams gets the streams for the fixture
+func (handler *LiveStreamHandler) GetStreams(c echo.Context) error {
+	timerID := c.Param("timerId")
+
+	url := fmt.Sprintf("%s/%s", handler.liveStreamURL, timerID)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	logErrors(c, err)
+
+	req.Header.Add("APIKey", handler.apiKey)
+	res, err := client.Do(req)
+	logErrors(c, err)
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	logErrors(c, err)
+
+	streams := &models.Streams{}
+	convertResponse(body, streams)
+	return c.JSON(http.StatusOK, *streams)
+}
+
+func convertResponse(body []byte, toConvertTo interface{}) {
+	err := json.Unmarshal(body, toConvertTo)
 	if err != nil {
 		panic(err)
 	}
-	return *fixtures
 }
 
 func logErrors(c echo.Context, err error) {
 	if err != nil {
-		c.Logger().Fatal(err)
+		c.Logger().Error(err)
 	}
 }

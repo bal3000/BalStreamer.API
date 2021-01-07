@@ -28,3 +28,12 @@ type LiveFixtures struct {
 	BroadcastNationName  string `json:"broadcastNationName"`
 	SourceTypeName       string `json:"sourceTypeName"`
 }
+
+// Streams is the model for the json returned from the live stream api
+type Streams struct {
+	HLS     string `json:"hls"`
+	HLSDvr  string `json:"hlsDvr"`
+	Dash    string `json:"dash"`
+	DashDvr string `json:"dashDvr"`
+	RTMP    string `json:"rtmp"`
+}

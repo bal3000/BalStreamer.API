@@ -19,4 +19,5 @@ func ChromecastRoutes(e *echo.Echo, chrome *handlers.ChromecastHandler) {
 // LiveStreamRoutes sets up the routes for the live streams handler
 func LiveStreamRoutes(e *echo.Echo, live *handlers.LiveStreamHandler) {
 	e.GET("/api/livestreams/:sportType/:fromDate/:toDate", live.GetFixtures)
+	e.GET("/api/livestreams/:timerId", live.GetStreams)
 }
