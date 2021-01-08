@@ -28,7 +28,7 @@ func (handler *LiveStreamHandler) GetFixtures(c echo.Context) error {
 
 	url := fmt.Sprintf("%s/%s/%s/%s", handler.liveStreamURL, sportType, fromDate, toDate)
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	logErrors(c, err)
 
 	req.Header.Add("APIKey", handler.apiKey)
@@ -54,7 +54,7 @@ func (handler *LiveStreamHandler) GetStreams(c echo.Context) error {
 
 	url := fmt.Sprintf("%s/%s", handler.liveStreamURL, timerID)
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	logErrors(c, err)
 
 	req.Header.Add("APIKey", handler.apiKey)
