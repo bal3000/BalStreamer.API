@@ -44,12 +44,15 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	// Handlers
 	cast := handlers.NewCastHandler(ch, config.ExchangeName)
 	chrome := handlers.NewChromecastHandler(db, ch, config.QueueName)
+	live := handlers.NewLiveStreamHandler(config.LiveStreamURL, config.APIKey)
 
 	// Routes
 	routes.CastRoutes(e, cast)
 	routes.ChromecastRoutes(e, chrome)
+	routes.LiveStreamRoutes(e, live)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":8080"))
