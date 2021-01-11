@@ -32,11 +32,11 @@ func main() {
 	rabbit := helpers.NewRabbitMQ(&config)
 	defer rabbit.Connection.Close()
 
-	ch := rabbit.CreateChannel()
-	defer ch.Close()
+	rabbit.CreateChannel()
+	defer rabbit.Channel.Close()
 
-	rabbit.CreateExchange(ch)
-	rabbit.DeclareAndBindQueue(ch)
+	rabbit.CreateExchange()
+	rabbit.DeclareAndBindQueue()
 
 	e := echo.New()
 
@@ -45,8 +45,8 @@ func main() {
 	e.Use(middleware.Recover())
 
 	// Handlers
-	cast := handlers.NewCastHandler(ch, config.ExchangeName)
-	chrome := handlers.NewChromecastHandler(db, ch, config.QueueName)
+	cast := handlers.NewCastHandler(rabbit, config.ExchangeName)
+	chrome := handlers.NewChromecastHandler(db, rabbit, config.QueueName)
 	live := handlers.NewLiveStreamHandler(config.LiveStreamURL, config.APIKey)
 
 	// Routes

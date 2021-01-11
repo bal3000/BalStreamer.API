@@ -8,18 +8,17 @@ import (
 	"github.com/bal3000/BalStreamer.API/helpers"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/labstack/echo/v4"
-	"github.com/streadway/amqp"
 )
 
 // CastHandler - controller for casting to chromecast
 type CastHandler struct {
-	RabbitMQ     *amqp.Channel
+	RabbitMQ     *helpers.RabbtMQ
 	ExchangeName string
 }
 
 // NewCastHandler - constructor to return new controller while passing in dependacies
-func NewCastHandler(ch *amqp.Channel, en string) *CastHandler {
-	return &CastHandler{RabbitMQ: ch, ExchangeName: en}
+func NewCastHandler(rabbit *helpers.RabbitMQ, en string) *CastHndler {
+	return &CastHandler{RabbitMQ: rabbit, ExchangeName: en}
 }
 
 // CastStream - streams given data to given chromecast
@@ -38,7 +37,7 @@ func (controller *CastHandler) CastStream(c echo.Context) error {
 		StreamDate:         time.Now(),
 	}
 
-	go helpers.SendMessage(controller.RabbitMQ, cast, controller.ExchangeName)
+	go sendMessage(controller.RabbitMQ, cast)
 
 	return c.NoContent(http.StatusNoContent)
 }
@@ -58,7 +57,11 @@ func (controller *CastHandler) StopStream(c echo.Context) error {
 		StopDateTime:     stopStreamCommand.StopDateTime,
 	}
 
-	go helpers.SendMessage(controller.RabbitMQ, cast, controller.ExchangeName)
+	go sendMessage(controller.RabbitMQ, cast)
 
 	return c.NoContent(http.StatusAccepted)
+}
+
+func sendMessage(queue helpers.MessageQueue, event models.EventMessage) {
+	queue.SendMessage(event)
 }

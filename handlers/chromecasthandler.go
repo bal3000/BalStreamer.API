@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bal3000/BalStreamer.API/helpers"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -21,13 +22,13 @@ var (
 // ChromecastHandler the controller for the websockets
 type ChromecastHandler struct {
 	Database  *sql.DB
-	RabbitMQ  *amqp.Channel
+	RabbitMQ  *helpers.RabbitMQ
 	QueueName string
 }
 
 // NewChromecastHandler creates a new ref to chromecast controller
-func NewChromecastHandler(db *sql.DB, ch *amqp.Channel, qn string) *ChromecastHandler {
-	return &ChromecastHandler{Database: db, RabbitMQ: ch, QueueName: qn}
+func NewChromecastHandler(db *sql.DB, rabbit *helpers.RabbitMQ, qn string) *ChromecastHandler {
+	return &ChromecastHandler{Database: db, RabbitMQ: rabbit, QueueName: qn}
 }
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
@@ -46,7 +47,7 @@ func (controller *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	}
 	defer insert.Close()
 
-	msgs, err := controller.RabbitMQ.Consume(
+	msgs, err := controller.RabbitMQ.Channel.Consume(
 		controller.QueueName, // queue
 		"",                   // consumer
 		true,                 // auto-ack

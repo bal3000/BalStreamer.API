@@ -36,17 +36,17 @@ func TestCastStream(t *testing.T) {
 	rabbitMock := helpers.NewRabbitMQ(config)
 	defer rabbitMock.Connection.Close()
 
-	ch := rabbitMock.CreateChannel()
-	defer ch.Close()
+	rabbitMock.CreateChannel()
+	defer rabbitMock.Channel.Close()
 
-	rabbitMock.CreateExchange(ch)
+	rabbitMock.CreateExchange()
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(castJSON))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	castHandle := &CastHandler{RabbitMQ: ch, ExchangeName: config.ExchangeName}
+	castHandle := &CastHandler{RabbitMQ: rabbitMock, ExchangeName: config.ExchangeName}
 
 	// Assertions
 	if assert.NoError(t, castHandle.CastStream(c)) {

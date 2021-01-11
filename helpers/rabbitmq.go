@@ -8,10 +8,16 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// MessageQueue - interface for interacting with message queues
+type MessageQueue interface {
+	SendMessage(message models.EventMessage) error
+}
+
 // RabbitMQ - settings to create a connection
 type RabbitMQ struct {
 	configuration *configuration.Configuration
 	Connection    *amqp.Connection
+	Channel       *amqp.Channel
 }
 
 // NewRabbitMQ creates a new rabbit mq connection
@@ -23,15 +29,15 @@ func NewRabbitMQ(config *configuration.Configuration) *RabbitMQ {
 }
 
 // CreateChannel creates a new channel
-func (mq *RabbitMQ) CreateChannel() *amqp.Channel {
+func (mq *RabbitMQ) CreateChannel() {
 	ch, err := mq.Connection.Channel()
 	failOnError(err, "Failed to bind a queue")
-	return ch
+	mq.Channel = ch
 }
 
 // CreateExchange creates an exchange
-func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
-	err := ch.ExchangeDeclare(
+func (mq *RabbitMQ) CreateExchange() {
+	err := mq.Channel.ExchangeDeclare(
 		mq.configuration.ExchangeName, // name
 		"fanout",                      // type
 		mq.configuration.Durable,      // durable
@@ -44,8 +50,8 @@ func (mq *RabbitMQ) CreateExchange(ch *amqp.Channel) {
 }
 
 // DeclareAndBindQueue declares a queue if one does not exist and then binds it to the channel
-func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
-	q, err := ch.QueueDeclare(
+func (mq *RabbitMQ) DeclareAndBindQueue() {
+	q, err := mq.Channel.QueueDeclare(
 		mq.configuration.QueueName, // name
 		mq.configuration.Durable,   // durable
 		false,                      // delete when unused
@@ -55,7 +61,7 @@ func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
 	)
 	failOnError(err, "Failed to declare a queue")
 
-	err = ch.QueueBind(
+	err = mq.Channel.QueueBind(
 		q.Name,                        // queue name
 		"",                            // routing key
 		mq.configuration.ExchangeName, // exchange
@@ -66,8 +72,7 @@ func (mq *RabbitMQ) DeclareAndBindQueue(ch *amqp.Channel) {
 }
 
 // SendMessage sends the given message
-func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName string) error {
-	log.Printf("Sending to exchange %s in rabbitMQ", exchangeName)
+func (mq *RabbitMQ) SendMessage(message models.EventMessage) error {
 	b, err := message.TransformMessage()
 	if err != nil {
 		return err
@@ -75,11 +80,11 @@ func SendMessage(ch *amqp.Channel, message models.EventMessage, exchangeName str
 
 	log.Println("Converted message to JSON and sending")
 
-	err = ch.Publish(
-		exchangeName, // exchange
-		"",           // routing key
-		false,        // mandatory
-		false,        // immediate
+	err = mq.Channel.Publish(
+		mq.configuration.ExchangeName, // exchange
+		"",                            // routing key
+		false,                         // mandatory
+		false,                         // immediate
 		amqp.Publishing{
 			ContentType: "application/vnd.masstransit+json",
 			Body:        []byte(b),
