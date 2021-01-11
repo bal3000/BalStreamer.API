@@ -12,12 +12,12 @@ import (
 
 // CastHandler - controller for casting to chromecast
 type CastHandler struct {
-	RabbitMQ     *helpers.RabbtMQ
+	RabbitMQ     *helpers.RabbitMQ
 	ExchangeName string
 }
 
 // NewCastHandler - constructor to return new controller while passing in dependacies
-func NewCastHandler(rabbit *helpers.RabbitMQ, en string) *CastHndler {
+func NewCastHandler(rabbit *helpers.RabbitMQ, en string) *CastHandler {
 	return &CastHandler{RabbitMQ: rabbit, ExchangeName: en}
 }
 
