@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/bal3000/BalStreamer.API/models"
@@ -36,11 +35,9 @@ func (handler *LiveStreamHandler) GetFixtures(c echo.Context) error {
 	logErrors(c, err)
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	logErrors(c, err)
-
 	fixtures := &[]models.LiveFixtures{}
-	convertResponse(body, fixtures)
+	err = json.NewDecoder(resp.Body).Decode(fixtures)
+	logErrors(c, err)
 
 	if len(*fixtures) == 0 {
 		return c.String(http.StatusNotFound, "No fixtures found")
@@ -62,11 +59,10 @@ func (handler *LiveStreamHandler) GetStreams(c echo.Context) error {
 	logErrors(c, err)
 	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(res.Body)
+	streams := &models.Streams{}
+	err = json.NewDecoder(res.Body).Decode(streams)
 	logErrors(c, err)
 
-	streams := &models.Streams{}
-	convertResponse(body, streams)
 	return c.JSON(http.StatusOK, *streams)
 }
 
