@@ -43,6 +43,7 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 
 	// Handlers
 	cast := handlers.NewCastHandler(rabbit, config.ExchangeName)
