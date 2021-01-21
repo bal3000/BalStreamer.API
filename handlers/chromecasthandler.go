@@ -33,6 +33,8 @@ func NewChromecastHandler(db *sql.DB, rabbit *helpers.RabbitMQ, qn string) *Chro
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
 func (controller *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
+	log.Println("Entered ws")
+
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {

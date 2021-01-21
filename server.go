@@ -51,6 +51,7 @@ func main() {
 	live := handlers.NewLiveStreamHandler(config.LiveStreamURL, config.APIKey)
 
 	// Routes
+	e.File("/", "public/index.html")
 	routes.CastRoutes(e, cast)
 	routes.ChromecastRoutes(e, chrome)
 	routes.LiveStreamRoutes(e, live)
