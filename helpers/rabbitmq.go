@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/bal3000/BalStreamer.API/configuration"
@@ -13,66 +14,29 @@ type MessageQueue interface {
 	SendMessage(message models.EventMessage) error
 }
 
-// RabbitMQ - settings to create a connection
-type RabbitMQ struct {
+// RabbitMQConnection - settings to create a connection
+type RabbitMQConnection struct {
 	configuration *configuration.Configuration
-	Connection    *amqp.Connection
 	Channel       *amqp.Channel
 }
 
-// NewRabbitMQ creates a new rabbit mq connection
-func NewRabbitMQ(config *configuration.Configuration) *RabbitMQ {
+type rabbitError struct {
+	ogErr   error
+	message string
+}
+
+// NewRabbitMQConnection creates a new rabbit mq connection
+func NewRabbitMQConnection(config *configuration.Configuration) RabbitMQConnection {
 	conn, err := amqp.Dial(config.RabbitURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 
-	return &RabbitMQ{configuration: config, Connection: conn}
-}
-
-// CreateChannel creates a new channel
-func (mq *RabbitMQ) CreateChannel() {
-	ch, err := mq.Connection.Channel()
-	failOnError(err, "Failed to bind a queue")
-	mq.Channel = ch
-}
-
-// CreateExchange creates an exchange
-func (mq *RabbitMQ) CreateExchange() {
-	err := mq.Channel.ExchangeDeclare(
-		mq.configuration.ExchangeName, // name
-		"fanout",                      // type
-		mq.configuration.Durable,      // durable
-		false,                         // auto-deleted
-		false,                         // internal
-		false,                         // no-wait
-		nil,                           // arguments
-	)
-	failOnError(err, "Failed to declare an exchange")
-}
-
-// DeclareAndBindQueue declares a queue if one does not exist and then binds it to the channel
-func (mq *RabbitMQ) DeclareAndBindQueue() {
-	q, err := mq.Channel.QueueDeclare(
-		mq.configuration.QueueName, // name
-		mq.configuration.Durable,   // durable
-		false,                      // delete when unused
-		false,                      // exclusive
-		false,                      // no-wait
-		nil,                        // arguments
-	)
-	failOnError(err, "Failed to declare a queue")
-
-	err = mq.Channel.QueueBind(
-		q.Name,                        // queue name
-		"",                            // routing key
-		mq.configuration.ExchangeName, // exchange
-		false,
-		nil,
-	)
-	failOnError(err, "Failed to bind a queue")
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to create a channel")
+	return RabbitMQConnection{configuration: config, Channel: ch}
 }
 
 // SendMessage sends the given message
-func (mq *RabbitMQ) SendMessage(message models.EventMessage) error {
+func (mq *RabbitMQConnection) SendMessage(routingKey string, message models.EventMessage) error {
 	b, err := message.TransformMessage()
 	if err != nil {
 		return err
@@ -80,22 +44,70 @@ func (mq *RabbitMQ) SendMessage(message models.EventMessage) error {
 
 	log.Println("Converted message to JSON and sending")
 
-	err = mq.Channel.Publish(
+	return mq.Channel.Publish(
 		mq.configuration.ExchangeName, // exchange
-		"",                            // routing key
+		routingKey,                    // routing key
 		false,                         // mandatory
 		false,                         // immediate
 		amqp.Publishing{
-			ContentType: "application/vnd.masstransit+json",
-			Body:        []byte(b),
+			ContentType:  "application/vnd.masstransit+json",
+			Body:         []byte(b),
+			DeliveryMode: amqp.Persistent,
 		})
+}
 
+// StartConsumer - starts consuming messages from the given queue
+func (mq *RabbitMQConnection) StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) {
+	// create the queue if it doesn't already exist
+	_, err := mq.Channel.QueueDeclare(mq.configuration.QueueName, true, false, false, false, nil)
+	failOnError(err, fmt.Sprintf("Failed to declare a queue: %s", mq.configuration.QueueName))
+
+	// bind the queue to the routing key
+	err = mq.Channel.QueueBind(mq.configuration.QueueName, routingKey, mq.configuration.ExchangeName, false, nil)
+	failOnError(err, fmt.Sprintf("Failed to bind to queue: %s", mq.configuration.QueueName))
+
+	// prefetch 4x as many messages as we can handle at once
+	prefetchCount := concurrency * 4
+	err = mq.Channel.Qos(prefetchCount, 0, false)
+	failOnError(err, "Failed to setup prefetch")
+
+	msgs, err := mq.Channel.Consume(
+		mq.configuration.QueueName, // queue
+		"",                         // consumer
+		false,                      // auto-ack
+		false,                      // exclusive
+		false,                      // no-local
+		false,                      // no-wait
+		nil,                        // args
+	)
+	failOnError(err, "Failed to get any messages")
+
+	for i := 0; i < concurrency; i++ {
+		fmt.Printf("Processing messages on thread %v...\n", i)
+		go func() {
+			for msg := range msgs {
+				// if tha handler returns true then ACK, else NACK
+				// the message back into the rabbit queue for
+				// another round of processing
+				if handler(msg) {
+					msg.Ack(false)
+				} else {
+					msg.Nack(false, true)
+				}
+			}
+			log.Panicln("Rabbit consumer closed - critical Error")
+		}()
+	}
+}
+
+func (err rabbitError) Error() string {
+
+}
+
+func returnErr(err error) error {
 	if err != nil {
 		return err
 	}
-
-	log.Println("Message sent")
-	return nil
 }
 
 func failOnError(err error, msg string) {
