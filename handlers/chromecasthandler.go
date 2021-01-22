@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -15,8 +16,8 @@ var (
 	upgrader       = websocket.Upgrader{}
 	foundEventType = "ChromecastFoundEvent"
 	lostEventType  = "ChromecastLostEvent"
-	ws             *websocket.Conn
 	chromecasts    = []models.ChromecastEvent{}
+	handledMsgs    = make(chan models.ChromecastEvent)
 )
 
 // ChromecastHandler the controller for the websockets
@@ -46,13 +47,19 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 		panic(err)
 	}
 
-	forever := make(chan bool)
-	<-forever
+	for msg := range handledMsgs {
+		err = ws.WriteJSON(msg)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	close(handledMsgs)
 
 	return nil
 }
 
 func processMsgs(d amqp.Delivery) bool {
+	fmt.Printf("processing message: %s", string(d.Body))
 	mtEvent := new(models.MassTransitEvent)
 
 	// convert mass transit message
@@ -74,11 +81,7 @@ func processMsgs(d amqp.Delivery) bool {
 		}
 	}
 
-	err = ws.WriteJSON(chromecastEvent)
-	if err != nil {
-		log.Println(err)
-		return false
-	}
+	handledMsgs <- chromecastEvent
 
 	return true
 }

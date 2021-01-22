@@ -33,7 +33,6 @@ func (err rabbitError) Error() string {
 func NewRabbitMQConnection(config *configuration.Configuration) RabbitMQConnection {
 	conn, err := amqp.Dial(config.RabbitURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
 
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to create a channel")
