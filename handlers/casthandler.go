@@ -12,17 +12,17 @@ import (
 
 // CastHandler - controller for casting to chromecast
 type CastHandler struct {
-	RabbitMQ     *helpers.RabbitMQ
+	RabbitMQ     *helpers.RabbitMQConnection
 	ExchangeName string
 }
 
 // NewCastHandler - constructor to return new controller while passing in dependacies
-func NewCastHandler(rabbit *helpers.RabbitMQ, en string) *CastHandler {
+func NewCastHandler(rabbit *helpers.RabbitMQConnection, en string) *CastHandler {
 	return &CastHandler{RabbitMQ: rabbit, ExchangeName: en}
 }
 
 // CastStream - streams given data to given chromecast
-func (controller *CastHandler) CastStream(c echo.Context) error {
+func (handler *CastHandler) CastStream(c echo.Context) error {
 	castCommand := new(models.StreamToCast)
 
 	if err := c.Bind(castCommand); err != nil {
@@ -37,13 +37,13 @@ func (controller *CastHandler) CastStream(c echo.Context) error {
 		StreamDate:         time.Now(),
 	}
 
-	go sendMessage(controller.RabbitMQ, cast)
+	go handler.RabbitMQ.SendMessage("chromecast-key", cast)
 
 	return c.NoContent(http.StatusNoContent)
 }
 
 // StopStream endpoint sends the command to stop the stream on the given chromecast
-func (controller *CastHandler) StopStream(c echo.Context) error {
+func (handler *CastHandler) StopStream(c echo.Context) error {
 	stopStreamCommand := new(models.StopPlayingStream)
 
 	if err := c.Bind(stopStreamCommand); err != nil {
@@ -57,11 +57,7 @@ func (controller *CastHandler) StopStream(c echo.Context) error {
 		StopDateTime:     stopStreamCommand.StopDateTime,
 	}
 
-	go sendMessage(controller.RabbitMQ, cast)
+	go handler.RabbitMQ.SendMessage("chromecast-key", cast)
 
 	return c.NoContent(http.StatusAccepted)
-}
-
-func sendMessage(queue helpers.MessageQueue, event models.EventMessage) {
-	queue.SendMessage(event)
 }

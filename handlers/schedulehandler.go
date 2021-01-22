@@ -9,11 +9,11 @@ import (
 
 // ScheduleHandler is the handler struct for schedule endpoints
 type ScheduleHandler struct {
-	RabbitMQ *helpers.RabbitMQ
+	RabbitMQ *helpers.RabbitMQConnection
 }
 
 // NewScheduleHandler creates a new pointer to schedule
-func NewScheduleHandler(rabbit *helpers.RabbitMQ) *ScheduleHandler {
+func NewScheduleHandler(rabbit *helpers.RabbitMQConnection) *ScheduleHandler {
 	return &ScheduleHandler{RabbitMQ: rabbit}
 }
 

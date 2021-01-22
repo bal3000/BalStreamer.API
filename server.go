@@ -29,14 +29,8 @@ func main() {
 	log.Println("Connected to DB")
 
 	//setup rabbit
-	rabbit := helpers.NewRabbitMQ(&config)
-	defer rabbit.Connection.Close()
-
-	rabbit.CreateChannel()
+	rabbit := helpers.NewRabbitMQConnection(&config)
 	defer rabbit.Channel.Close()
-
-	rabbit.CreateExchange()
-	rabbit.DeclareAndBindQueue()
 
 	e := echo.New()
 
@@ -46,8 +40,8 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 
 	// Handlers
-	cast := handlers.NewCastHandler(rabbit, config.ExchangeName)
-	chrome := handlers.NewChromecastHandler(db, rabbit, config.QueueName)
+	cast := handlers.NewCastHandler(&rabbit, config.ExchangeName)
+	chrome := handlers.NewChromecastHandler(db, &rabbit, config.QueueName)
 	live := handlers.NewLiveStreamHandler(config.LiveStreamURL, config.APIKey)
 
 	// Routes
