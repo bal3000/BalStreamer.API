@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
@@ -22,14 +21,13 @@ var (
 
 // ChromecastHandler the controller for the websockets
 type ChromecastHandler struct {
-	Database  *sql.DB
 	RabbitMQ  *helpers.RabbitMQConnection
 	QueueName string
 }
 
 // NewChromecastHandler creates a new ref to chromecast controller
-func NewChromecastHandler(db *sql.DB, rabbit *helpers.RabbitMQConnection, qn string) *ChromecastHandler {
-	return &ChromecastHandler{Database: db, RabbitMQ: rabbit, QueueName: qn}
+func NewChromecastHandler(rabbit *helpers.RabbitMQConnection, qn string) *ChromecastHandler {
+	return &ChromecastHandler{RabbitMQ: rabbit, QueueName: qn}
 }
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
