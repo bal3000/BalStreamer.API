@@ -25,6 +25,10 @@ type rabbitError struct {
 	message string
 }
 
+func (err rabbitError) Error() string {
+	return fmt.Sprintf("%s - %s", err.message, err.ogErr)
+}
+
 // NewRabbitMQConnection creates a new rabbit mq connection
 func NewRabbitMQConnection(config *configuration.Configuration) RabbitMQConnection {
 	conn, err := amqp.Dial(config.RabbitURL)
@@ -57,19 +61,25 @@ func (mq *RabbitMQConnection) SendMessage(routingKey string, message models.Even
 }
 
 // StartConsumer - starts consuming messages from the given queue
-func (mq *RabbitMQConnection) StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) {
+func (mq *RabbitMQConnection) StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) error {
 	// create the queue if it doesn't already exist
 	_, err := mq.Channel.QueueDeclare(mq.configuration.QueueName, true, false, false, false, nil)
-	failOnError(err, fmt.Sprintf("Failed to declare a queue: %s", mq.configuration.QueueName))
+	if err != nil {
+		return returnErr(err, fmt.Sprintf("Failed to declare a queue: %s", mq.configuration.QueueName))
+	}
 
 	// bind the queue to the routing key
 	err = mq.Channel.QueueBind(mq.configuration.QueueName, routingKey, mq.configuration.ExchangeName, false, nil)
-	failOnError(err, fmt.Sprintf("Failed to bind to queue: %s", mq.configuration.QueueName))
+	if err != nil {
+		return returnErr(err, fmt.Sprintf("Failed to bind to queue: %s", mq.configuration.QueueName))
+	}
 
 	// prefetch 4x as many messages as we can handle at once
 	prefetchCount := concurrency * 4
 	err = mq.Channel.Qos(prefetchCount, 0, false)
-	failOnError(err, "Failed to setup prefetch")
+	if err != nil {
+		return returnErr(err, "Failed to setup prefetch")
+	}
 
 	msgs, err := mq.Channel.Consume(
 		mq.configuration.QueueName, // queue
@@ -80,7 +90,9 @@ func (mq *RabbitMQConnection) StartConsumer(routingKey string, handler func(d am
 		false,                      // no-wait
 		nil,                        // args
 	)
-	failOnError(err, "Failed to get any messages")
+	if err != nil {
+		return returnErr(err, "Failed to get any messages")
+	}
 
 	for i := 0; i < concurrency; i++ {
 		fmt.Printf("Processing messages on thread %v...\n", i)
@@ -98,16 +110,13 @@ func (mq *RabbitMQConnection) StartConsumer(routingKey string, handler func(d am
 			log.Panicln("Rabbit consumer closed - critical Error")
 		}()
 	}
+
+	return nil
 }
 
-func (err rabbitError) Error() string {
-
-}
-
-func returnErr(err error) error {
-	if err != nil {
-		return err
-	}
+func returnErr(err error, msg string) error {
+	re := rabbitError{message: msg, ogErr: err}
+	return re
 }
 
 func failOnError(err error, msg string) {

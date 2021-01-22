@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/bal3000/BalStreamer.API/helpers"
 	"github.com/bal3000/BalStreamer.API/models"
@@ -17,22 +16,24 @@ var (
 	upgrader       = websocket.Upgrader{}
 	foundEventType = "ChromecastFoundEvent"
 	lostEventType  = "ChromecastLostEvent"
+	ws             *websocket.Conn
+	chromecasts    = []models.ChromecastEvent{}
 )
 
 // ChromecastHandler the controller for the websockets
 type ChromecastHandler struct {
 	Database  *sql.DB
-	RabbitMQ  *helpers.RabbitMQ
+	RabbitMQ  *helpers.RabbitMQConnection
 	QueueName string
 }
 
 // NewChromecastHandler creates a new ref to chromecast controller
-func NewChromecastHandler(db *sql.DB, rabbit *helpers.RabbitMQ, qn string) *ChromecastHandler {
+func NewChromecastHandler(db *sql.DB, rabbit *helpers.RabbitMQConnection, qn string) *ChromecastHandler {
 	return &ChromecastHandler{Database: db, RabbitMQ: rabbit, QueueName: qn}
 }
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
-func (controller *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
+func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	log.Println("Entered ws")
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
@@ -42,58 +43,68 @@ func (controller *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	}
 	defer ws.Close()
 
-	// Prepare insert statement
-	insert, insertErr := controller.Database.Prepare("INSERT INTO public.\"Chromecasts\" VALUES ($1,$2)")
-	if insertErr != nil {
-		panic(insertErr)
-	}
-	defer insert.Close()
-
-	msgs, err := controller.RabbitMQ.Channel.Consume(
-		controller.QueueName, // queue
-		"",                   // consumer
-		true,                 // auto-ack
-		false,                // exclusive
-		false,                // no-local
-		false,                // no-wait
-		nil,                  // args
-	)
+	err = handler.RabbitMQ.StartConsumer("chromecast-key", processMsgs, 2)
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	forever := make(chan bool)
-
-	go waitAndProcessMsg(msgs, insert, ws, c)
-
 	<-forever
 
 	return nil
 }
 
-func waitAndProcessMsg(msgs <-chan amqp.Delivery, insert *sql.Stmt, ws *websocket.Conn, c echo.Context) {
+func processMsgs(d amqp.Delivery) bool {
 	mtEvent := new(models.MassTransitEvent)
-	for d := range msgs {
-		// need this to test how I can tell the difference between add and remove events
-		log.Println("Rabbit message: ", string(d.Body))
 
-		// convert mass transit message
-		chromecastEvent, err := mtEvent.RetrieveMessage(d.Body)
-		if err != nil {
-			c.Logger().Error(err)
+	// convert mass transit message
+	chromecastEvent, err := mtEvent.RetrieveMessage(d.Body)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	// insert into db - might make this a proc to determine if it already exists and if so update time
+	switch chromecastEvent.EventType {
+	case foundEventType:
+		if !contains(chromecasts, chromecastEvent) {
+			chromecasts = append(chromecasts, chromecastEvent)
 		}
-
-		// insert into db - might make this a proc to determine if it already exists and if so update time
-		switch chromecastEvent.EventType {
-		case foundEventType:
-			insert.Exec(chromecastEvent.Chromecast, time.Now())
-		case lostEventType:
-			insert.Exec(chromecastEvent.Chromecast, time.Now())
-		}
-
-		err = ws.WriteJSON(chromecastEvent)
-		if err != nil {
-			c.Logger().Error(err)
+	case lostEventType:
+		if i := find(chromecasts, chromecastEvent); i > -1 {
+			chromecasts = remove(chromecasts, i)
 		}
 	}
+
+	err = ws.WriteJSON(chromecastEvent)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	return true
+}
+
+func contains(a []models.ChromecastEvent, x models.ChromecastEvent) bool {
+	for _, n := range a {
+		if x == n {
+			return true
+		}
+	}
+	return false
+}
+
+func find(a []models.ChromecastEvent, x models.ChromecastEvent) int {
+	for i, n := range a {
+		if x == n {
+			return i
+		}
+	}
+	return len(a)
+}
+
+func remove(s []models.ChromecastEvent, i int) []models.ChromecastEvent {
+	s[i] = s[len(s)-1]
+	// We do not need to put s[i] at the end, as it will be discarded anyway
+	return s[:len(s)-1]
 }
