@@ -1,6 +1,11 @@
 package main
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"time"
+
 	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/helpers"
 	"github.com/bal3000/BalStreamer.API/routes"
@@ -31,5 +36,21 @@ func main() {
 	routes.SetRoutes(e, config, &rabbit)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":8080"))
+	go func() {
+		if err := e.Start(":8080"); err != nil {
+			e.Logger.Info("Shutting down server")
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt)
+	<-shutdown
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
 }
