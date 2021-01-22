@@ -69,7 +69,6 @@ func processMsgs(d amqp.Delivery) bool {
 		return false
 	}
 
-	// insert into db - might make this a proc to determine if it already exists and if so update time
 	switch chromecastEvent.EventType {
 	case foundEventType:
 		if !contains(chromecasts, chromecastEvent) {
@@ -106,6 +105,5 @@ func find(a []models.ChromecastEvent, x models.ChromecastEvent) int {
 
 func remove(s []models.ChromecastEvent, i int) []models.ChromecastEvent {
 	s[i] = s[len(s)-1]
-	// We do not need to put s[i] at the end, as it will be discarded anyway
 	return s[:len(s)-1]
 }
