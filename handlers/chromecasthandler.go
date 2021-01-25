@@ -16,7 +16,7 @@ var (
 	upgrader       = websocket.Upgrader{}
 	foundEventType = "ChromecastFoundEvent"
 	lostEventType  = "ChromecastLostEvent"
-	chromecasts    = make(map[string]string)
+	chromecasts    = make(map[string]models.ChromecastEvent)
 	handledMsgs    = make(chan models.ChromecastEvent)
 )
 
@@ -43,8 +43,8 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	defer ws.Close()
 
 	// send all chromecasts from last refresh to page
-	for key := range chromecasts {
-		err = ws.WriteJSON(key)
+	for _, event := range chromecasts {
+		err = ws.WriteJSON(event)
 		if err != nil {
 			return err
 		}
@@ -56,7 +56,7 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	}
 
 	for msg := range handledMsgs {
-		err = ws.WriteJSON(msg.Chromecast)
+		err = ws.WriteJSON(msg)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -81,7 +81,7 @@ func processMsgs(d amqp.Delivery) bool {
 	if name, ok := chromecastEvent.Chromecast.(string); ok {
 		switch chromecastEvent.EventType {
 		case foundEventType:
-			chromecasts[name] = name
+			chromecasts[name] = chromecastEvent
 		case lostEventType:
 			delete(chromecasts, name)
 		}
