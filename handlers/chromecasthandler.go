@@ -16,7 +16,7 @@ var (
 	upgrader       = websocket.Upgrader{}
 	foundEventType = "ChromecastFoundEvent"
 	lostEventType  = "ChromecastLostEvent"
-	chromecasts    = []models.ChromecastEvent{}
+	chromecasts    = make(map[string]bool)
 	handledMsgs    = make(chan models.ChromecastEvent)
 )
 
@@ -33,7 +33,7 @@ func NewChromecastHandler(rabbit *helpers.RabbitMQConnection, qn string) *Chrome
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
 func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
-	log.Println("Entered ws")
+	log.Println("Entered ws, sending current found chromecasts")
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
@@ -41,6 +41,10 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 		return err
 	}
 	defer ws.Close()
+	err = ws.WriteJSON(chromecasts)
+	if err != nil {
+		return err
+	}
 
 	err = handler.RabbitMQ.StartConsumer("chromecast-key", processMsgs, 2)
 	if err != nil {
@@ -51,11 +55,12 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 		err = ws.WriteJSON(msg)
 		if err != nil {
 			log.Println(err)
+			return err
 		}
 	}
 	close(handledMsgs)
 
-	return nil
+	return err
 }
 
 func processMsgs(d amqp.Delivery) bool {
@@ -69,14 +74,12 @@ func processMsgs(d amqp.Delivery) bool {
 		return false
 	}
 
-	switch chromecastEvent.EventType {
-	case foundEventType:
-		if !contains(chromecasts, chromecastEvent) {
-			chromecasts = append(chromecasts, chromecastEvent)
-		}
-	case lostEventType:
-		if i := find(chromecasts, chromecastEvent); i > -1 {
-			chromecasts = remove(chromecasts, i)
+	if name, ok := chromecastEvent.Chromecast.(string); ok {
+		switch chromecastEvent.EventType {
+		case foundEventType:
+			chromecasts[name] = true
+		case lostEventType:
+			chromecasts[name] = false
 		}
 	}
 
