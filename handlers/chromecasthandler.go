@@ -16,7 +16,7 @@ var (
 	upgrader       = websocket.Upgrader{}
 	foundEventType = "ChromecastFoundEvent"
 	lostEventType  = "ChromecastLostEvent"
-	chromecasts    = make(map[string]bool)
+	chromecasts    = make(map[string]string)
 	handledMsgs    = make(chan models.ChromecastEvent)
 )
 
@@ -41,9 +41,13 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 		return err
 	}
 	defer ws.Close()
-	err = ws.WriteJSON(chromecasts)
-	if err != nil {
-		return err
+
+	// send all chromecasts from last refresh to page
+	for key := range chromecasts {
+		err = ws.WriteJSON(key)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = handler.RabbitMQ.StartConsumer("chromecast-key", processMsgs, 2)
@@ -52,7 +56,7 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	}
 
 	for msg := range handledMsgs {
-		err = ws.WriteJSON(msg)
+		err = ws.WriteJSON(msg.Chromecast)
 		if err != nil {
 			log.Println(err)
 			return err
@@ -77,9 +81,9 @@ func processMsgs(d amqp.Delivery) bool {
 	if name, ok := chromecastEvent.Chromecast.(string); ok {
 		switch chromecastEvent.EventType {
 		case foundEventType:
-			chromecasts[name] = true
+			chromecasts[name] = name
 		case lostEventType:
-			chromecasts[name] = false
+			delete(chromecasts, name)
 		}
 	}
 
