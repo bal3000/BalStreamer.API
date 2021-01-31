@@ -1,4 +1,4 @@
-package helpers
+package messaging
 
 import (
 	"fmt"
@@ -9,9 +9,10 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// MessageQueue - interface for interacting with message queues
-type MessageQueue interface {
-	SendMessage(message models.EventMessage) error
+// RabbitMQ interface to inject into handlers for using rabbitmq
+type RabbitMQ interface {
+	SendMessage(routingKey string, message models.EventMessage) error
+	StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) error
 }
 
 // RabbitMQConnection - settings to create a connection

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bal3000/BalStreamer.API/configuration"
-	"github.com/bal3000/BalStreamer.API/helpers"
+	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +33,7 @@ func (m *RabbitChannelMock) Publish(exchange, key string, mandatory, immediate b
 
 func TestCastStream(t *testing.T) {
 	// Setup
-	rabbitMock := helpers.NewRabbitMQConnection(config)
+	rabbitMock := messaging.NewRabbitMQConnection(config)
 	defer rabbitMock.Channel.Close()
 
 	e := echo.New()

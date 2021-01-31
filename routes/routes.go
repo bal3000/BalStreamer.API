@@ -3,12 +3,12 @@ package routes
 import (
 	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/handlers"
-	"github.com/bal3000/BalStreamer.API/helpers"
+	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/labstack/echo/v4"
 )
 
 // SetRoutes creates the handlers and routes for those handlers
-func SetRoutes(e *echo.Echo, config configuration.Configuration, rabbit *helpers.RabbitMQConnection) {
+func SetRoutes(e *echo.Echo, config configuration.Configuration, rabbit *messaging.RabbitMQConnection) {
 	// Handlers
 	cast := handlers.NewCastHandler(rabbit, config.ExchangeName)
 	chrome := handlers.NewChromecastHandler(rabbit, config.QueueName)

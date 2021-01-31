@@ -5,19 +5,19 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bal3000/BalStreamer.API/helpers"
+	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/labstack/echo/v4"
 )
 
 // CastHandler - controller for casting to chromecast
 type CastHandler struct {
-	RabbitMQ     *helpers.RabbitMQConnection
+	RabbitMQ     messaging.RabbitMQ
 	ExchangeName string
 }
 
 // NewCastHandler - constructor to return new controller while passing in dependacies
-func NewCastHandler(rabbit *helpers.RabbitMQConnection, en string) *CastHandler {
+func NewCastHandler(rabbit messaging.RabbitMQ, en string) *CastHandler {
 	return &CastHandler{RabbitMQ: rabbit, ExchangeName: en}
 }
 

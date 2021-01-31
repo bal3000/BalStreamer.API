@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bal3000/BalStreamer.API/configuration"
-	"github.com/bal3000/BalStreamer.API/helpers"
+	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/bal3000/BalStreamer.API/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,7 +21,7 @@ func init() {
 
 func main() {
 	//setup rabbit
-	rabbit := helpers.NewRabbitMQConnection(&config)
+	rabbit := messaging.NewRabbitMQConnection(&config)
 	defer rabbit.Channel.Close()
 
 	e := echo.New()

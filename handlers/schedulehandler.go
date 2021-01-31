@@ -3,17 +3,17 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/bal3000/BalStreamer.API/helpers"
+	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/labstack/echo/v4"
 )
 
 // ScheduleHandler is the handler struct for schedule endpoints
 type ScheduleHandler struct {
-	RabbitMQ *helpers.RabbitMQConnection
+	RabbitMQ *messaging.RabbitMQConnection
 }
 
 // NewScheduleHandler creates a new pointer to schedule
-func NewScheduleHandler(rabbit *helpers.RabbitMQConnection) *ScheduleHandler {
+func NewScheduleHandler(rabbit *messaging.RabbitMQConnection) *ScheduleHandler {
 	return &ScheduleHandler{RabbitMQ: rabbit}
 }
 
