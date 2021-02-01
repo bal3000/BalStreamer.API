@@ -13,12 +13,13 @@ import (
 type RabbitMQ interface {
 	SendMessage(routingKey string, message models.EventMessage) error
 	StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) error
+	CloseChannel()
 }
 
 // RabbitMQConnection - settings to create a connection
-type RabbitMQConnection struct {
+type rabbitMQConnection struct {
 	configuration *configuration.Configuration
-	Channel       *amqp.Channel
+	channel       *amqp.Channel
 }
 
 type rabbitError struct {
@@ -31,17 +32,21 @@ func (err rabbitError) Error() string {
 }
 
 // NewRabbitMQConnection creates a new rabbit mq connection
-func NewRabbitMQConnection(config *configuration.Configuration) RabbitMQConnection {
+func NewRabbitMQConnection(config *configuration.Configuration) RabbitMQ {
 	conn, err := amqp.Dial(config.RabbitURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to create a channel")
-	return RabbitMQConnection{configuration: config, Channel: ch}
+	return &rabbitMQConnection{configuration: config, channel: ch}
+}
+
+func (mq *rabbitMQConnection) CloseChannel() {
+	mq.channel.Close()
 }
 
 // SendMessage sends the given message
-func (mq *RabbitMQConnection) SendMessage(routingKey string, message models.EventMessage) error {
+func (mq *rabbitMQConnection) SendMessage(routingKey string, message models.EventMessage) error {
 	b, err := message.TransformMessage()
 	if err != nil {
 		return err
@@ -49,7 +54,7 @@ func (mq *RabbitMQConnection) SendMessage(routingKey string, message models.Even
 
 	log.Println("Converted message to JSON and sending")
 
-	return mq.Channel.Publish(
+	return mq.channel.Publish(
 		mq.configuration.ExchangeName, // exchange
 		routingKey,                    // routing key
 		false,                         // mandatory
@@ -62,27 +67,27 @@ func (mq *RabbitMQConnection) SendMessage(routingKey string, message models.Even
 }
 
 // StartConsumer - starts consuming messages from the given queue
-func (mq *RabbitMQConnection) StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) error {
+func (mq *rabbitMQConnection) StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) error {
 	// create the queue if it doesn't already exist
-	_, err := mq.Channel.QueueDeclare(mq.configuration.QueueName, true, false, false, false, nil)
+	_, err := mq.channel.QueueDeclare(mq.configuration.QueueName, true, false, false, false, nil)
 	if err != nil {
 		return returnErr(err, fmt.Sprintf("Failed to declare a queue: %s", mq.configuration.QueueName))
 	}
 
 	// bind the queue to the routing key
-	err = mq.Channel.QueueBind(mq.configuration.QueueName, routingKey, mq.configuration.ExchangeName, false, nil)
+	err = mq.channel.QueueBind(mq.configuration.QueueName, routingKey, mq.configuration.ExchangeName, false, nil)
 	if err != nil {
 		return returnErr(err, fmt.Sprintf("Failed to bind to queue: %s", mq.configuration.QueueName))
 	}
 
 	// prefetch 4x as many messages as we can handle at once
 	prefetchCount := concurrency * 4
-	err = mq.Channel.Qos(prefetchCount, 0, false)
+	err = mq.channel.Qos(prefetchCount, 0, false)
 	if err != nil {
 		return returnErr(err, "Failed to setup prefetch")
 	}
 
-	msgs, err := mq.Channel.Consume(
+	msgs, err := mq.channel.Consume(
 		mq.configuration.QueueName, // queue
 		"",                         // consumer
 		false,                      // auto-ack

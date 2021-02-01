@@ -22,7 +22,7 @@ func init() {
 func main() {
 	//setup rabbit
 	rabbit := messaging.NewRabbitMQConnection(&config)
-	defer rabbit.Channel.Close()
+	defer rabbit.CloseChannel()
 
 	e := echo.New()
 
@@ -33,7 +33,7 @@ func main() {
 
 	// Routes
 	e.File("/", "public/index.html")
-	routes.SetRoutes(e, config, &rabbit)
+	routes.SetRoutes(e, config, rabbit)
 
 	// Start server
 	go func() {

@@ -34,14 +34,14 @@ func (m *RabbitChannelMock) Publish(exchange, key string, mandatory, immediate b
 func TestCastStream(t *testing.T) {
 	// Setup
 	rabbitMock := messaging.NewRabbitMQConnection(config)
-	defer rabbitMock.Channel.Close()
+	defer rabbitMock.CloseChannel()
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(castJSON))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	castHandle := &CastHandler{RabbitMQ: &rabbitMock, ExchangeName: config.ExchangeName}
+	castHandle := &CastHandler{RabbitMQ: rabbitMock, ExchangeName: config.ExchangeName}
 
 	// Assertions
 	if assert.NoError(t, castHandle.CastStream(c)) {

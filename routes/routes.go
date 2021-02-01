@@ -8,7 +8,7 @@ import (
 )
 
 // SetRoutes creates the handlers and routes for those handlers
-func SetRoutes(e *echo.Echo, config configuration.Configuration, rabbit *messaging.RabbitMQConnection) {
+func SetRoutes(e *echo.Echo, config configuration.Configuration, rabbit messaging.RabbitMQ) {
 	// Handlers
 	cast := handlers.NewCastHandler(rabbit, config.ExchangeName)
 	chrome := handlers.NewChromecastHandler(rabbit, config.QueueName)
