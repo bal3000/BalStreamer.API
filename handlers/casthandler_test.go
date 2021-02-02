@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/bal3000/BalStreamer.API/configuration"
-	"github.com/bal3000/BalStreamer.API/messaging"
+	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
 	"github.com/stretchr/testify/assert"
@@ -26,15 +26,22 @@ type RabbitChannelMock struct {
 	mock.Mock
 }
 
-func (m *RabbitChannelMock) Publish(exchange, key string, mandatory, immediate bool, msg amqp.Publishing) error {
-	args := m.Mock.Called(exchange, key, mandatory, immediate, msg)
-	return args.Error(1)
+func (m *RabbitChannelMock) SendMessage(routingKey string, message models.EventMessage) error {
+	args := m.Called(routingKey, message)
+	return args.Error(0)
+}
+
+func (m *RabbitChannelMock) StartConsumer(routingKey string, handler func(d amqp.Delivery) bool, concurrency int) error {
+	args := m.Called(routingKey, handler, concurrency)
+	return args.Error(0)
+}
+
+func (m *RabbitChannelMock) CloseChannel() {
 }
 
 func TestCastStream(t *testing.T) {
 	// Setup
-	rabbitMock := messaging.NewRabbitMQConnection(config)
-	defer rabbitMock.CloseChannel()
+	rabbitMock := &RabbitChannelMock{}
 
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(castJSON))
