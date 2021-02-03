@@ -37,7 +37,7 @@ func (handler *CastHandler) CastStream(c echo.Context) error {
 		StreamDate:         time.Now(),
 	}
 
-	go handler.RabbitMQ.SendMessage("chromecast-key", cast)
+	handler.RabbitMQ.SendMessage("chromecast-key", cast)
 
 	return c.NoContent(http.StatusNoContent)
 }
