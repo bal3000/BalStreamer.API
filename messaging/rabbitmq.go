@@ -47,7 +47,7 @@ func (mq *rabbitMQConnection) CloseChannel() {
 
 // SendMessage sends the given message
 func (mq *rabbitMQConnection) SendMessage(routingKey string, message models.EventMessage) error {
-	b, err := message.TransformMessage()
+	b, t, err := message.TransformMessage()
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,8 @@ func (mq *rabbitMQConnection) SendMessage(routingKey string, message models.Even
 		false,                         // mandatory
 		false,                         // immediate
 		amqp.Publishing{
-			ContentType:  "application/vnd.masstransit+json",
+			Type:         t,
+			ContentType:  "application/json",
 			Body:         []byte(b),
 			DeliveryMode: amqp.Persistent,
 		})

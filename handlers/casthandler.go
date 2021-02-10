@@ -10,13 +10,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const routingKey string = "chromecast-key"
+
 // CastHandler - controller for casting to chromecast
 type CastHandler struct {
 	RabbitMQ     messaging.RabbitMQ
 	ExchangeName string
 }
 
-// NewCastHandler - constructor to return new controller while passing in dependacies
+// NewCastHandler - constructor to return new controller while passing in dependencies
 func NewCastHandler(rabbit messaging.RabbitMQ, en string) *CastHandler {
 	return &CastHandler{RabbitMQ: rabbit, ExchangeName: en}
 }
@@ -37,7 +39,7 @@ func (handler *CastHandler) CastStream(c echo.Context) error {
 		StreamDate:         time.Now(),
 	}
 
-	handler.RabbitMQ.SendMessage("chromecast-key", cast)
+	go handler.RabbitMQ.SendMessage(routingKey, cast)
 
 	return c.NoContent(http.StatusNoContent)
 }
@@ -57,7 +59,7 @@ func (handler *CastHandler) StopStream(c echo.Context) error {
 		StopDateTime:     stopStreamCommand.StopDateTime,
 	}
 
-	go handler.RabbitMQ.SendMessage("chromecast-key", cast)
+	go handler.RabbitMQ.SendMessage(routingKey, cast)
 
 	return c.NoContent(http.StatusAccepted)
 }

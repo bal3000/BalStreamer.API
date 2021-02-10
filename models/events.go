@@ -8,7 +8,7 @@ import (
 
 // EventMessage interface for transforming messages to masstransit ones
 type EventMessage interface {
-	TransformMessage() ([]byte, error)
+	TransformMessage() ([]byte, string, error)
 }
 
 // MassTransitEvent the wrapper so mass transit can accept the events
@@ -37,23 +37,21 @@ type ChromecastEvent struct {
 }
 
 // TransformMessage transforms the message to a masstransit one and then turns into JSON
-func (message *StreamToChromecastEvent) TransformMessage() ([]byte, error) {
-	mtEvent := MassTransitEvent{
-		Message:     message,
-		MessageType: []string{"urn:message:BalStreamer.Shared.EventBus.Events:StreamToChromecastEvent"},
+func (message *StreamToChromecastEvent) TransformMessage() ([]byte, string, error) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		return nil, "", err
 	}
-
-	return json.Marshal(mtEvent)
+	return data, "StreamToChromecastEvent", nil
 }
 
 // TransformMessage transforms the message to a masstransit one and then turns into JSON
-func (message *StopPlayingStreamEvent) TransformMessage() ([]byte, error) {
-	mtEvent := MassTransitEvent{
-		Message:     message,
-		MessageType: []string{"urn:message:BalStreamer.Shared.EventBus.Events:StopPlayingStreamEvent"},
+func (message *StopPlayingStreamEvent) TransformMessage() ([]byte, string, error) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		return nil, "", err
 	}
-
-	return json.Marshal(mtEvent)
+	return data, "StopPlayingStreamEvent", nil
 }
 
 // RetrieveMessage converts the incoming message to a struct
