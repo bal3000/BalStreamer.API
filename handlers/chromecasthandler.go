@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bal3000/BalStreamer.API/infrastructure"
 	"log"
@@ -68,26 +69,24 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 }
 
 func processMsgs(d amqp.Delivery) bool {
-	fmt.Printf("processing message: %s", string(d.Body))
-	mtEvent := new(models.MassTransitEvent)
+	fmt.Printf("processing message: %s, with type: %s", string(d.Body), d.Type)
+	event := new(models.ChromecastEvent)
 
 	// convert mass transit message
-	chromecastEvent, err := mtEvent.RetrieveMessage(d.Body)
+	err := json.Unmarshal(d.Body, event)
 	if err != nil {
 		log.Println(err)
 		return false
 	}
 
-	if name, ok := chromecastEvent.Chromecast.(string); ok {
-		switch chromecastEvent.EventType {
-		case foundEventType:
-			chromecasts[name] = chromecastEvent
-		case lostEventType:
-			delete(chromecasts, name)
-		}
+	switch d.Type {
+	case foundEventType:
+		chromecasts[event.Chromecast] = *event
+	case lostEventType:
+		delete(chromecasts, event.Chromecast)
 	}
 
-	handledMsgs <- chromecastEvent
+	handledMsgs <- *event
 
 	return true
 }
