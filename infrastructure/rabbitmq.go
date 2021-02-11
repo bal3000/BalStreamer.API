@@ -1,10 +1,9 @@
-package messaging
+package infrastructure
 
 import (
 	"fmt"
 	"log"
 
-	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/streadway/amqp"
 )
@@ -18,7 +17,7 @@ type RabbitMQ interface {
 
 // RabbitMQConnection - settings to create a connection
 type rabbitMQConnection struct {
-	configuration *configuration.Configuration
+	configuration *Configuration
 	channel       *amqp.Channel
 }
 
@@ -32,13 +31,17 @@ func (err rabbitError) Error() string {
 }
 
 // NewRabbitMQConnection creates a new rabbit mq connection
-func NewRabbitMQConnection(config *configuration.Configuration) RabbitMQ {
+func NewRabbitMQConnection(config *Configuration) (RabbitMQ, error) {
 	conn, err := amqp.Dial(config.RabbitURL)
-	failOnError(err, "Failed to connect to RabbitMQ")
+	if err != nil {
+		return nil, err
+	}
 
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to create a channel")
-	return &rabbitMQConnection{configuration: config, channel: ch}
+	if err != nil {
+		return nil, err
+	}
+	return &rabbitMQConnection{configuration: config, channel: ch}, nil
 }
 
 func (mq *rabbitMQConnection) CloseChannel() {

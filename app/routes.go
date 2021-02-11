@@ -1,22 +1,21 @@
-package routes
+package app
 
 import (
-	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/handlers"
-	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/labstack/echo/v4"
 )
 
 // SetRoutes creates the handlers and routes for those handlers
-func SetRoutes(e *echo.Echo, config configuration.Configuration, rabbit messaging.RabbitMQ) {
+func (s *Server) SetRoutes() {
+	s.Echo.File("/", "public/index.html")
 	// Handlers
-	cast := handlers.NewCastHandler(rabbit, config.ExchangeName)
-	chrome := handlers.NewChromecastHandler(rabbit, config.QueueName)
-	live := handlers.NewLiveStreamHandler(config.LiveStreamURL, config.APIKey)
+	cast := handlers.NewCastHandler(s.RabbitMQ, s.Config.ExchangeName)
+	chrome := handlers.NewChromecastHandler(s.RabbitMQ, s.Config.QueueName)
+	live := handlers.NewLiveStreamHandler(s.Config.LiveStreamURL, s.Config.APIKey)
 
-	CastRoutes(e, cast)
-	ChromecastRoutes(e, chrome)
-	LiveStreamRoutes(e, live)
+	CastRoutes(s.Echo, cast)
+	ChromecastRoutes(s.Echo, chrome)
+	LiveStreamRoutes(s.Echo, live)
 }
 
 // CastRoutes sets up the routes for the cast handler

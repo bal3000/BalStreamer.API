@@ -1,4 +1,4 @@
-package configuration
+package infrastructure
 
 import (
 	"encoding/json"

@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"github.com/bal3000/BalStreamer.API/infrastructure"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/bal3000/BalStreamer.API/configuration"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	config   = &configuration.Configuration{RabbitURL: "amqp://guest:guest@localhost:5672/", ExchangeName: "bal-streamer-caster", QueueName: "bal-streamer-api", Durable: true}
+	config   = &infrastructure.Configuration{RabbitURL: "amqp://guest:guest@localhost:5672/", ExchangeName: "bal-streamer-caster", QueueName: "bal-streamer-api", Durable: true}
 	castJSON = `{
 		"chromecast": "Family room TV",
 		"streamURL": "rtmp://cdn.vops.gcp.xeatre.cloud:5222/liveedge-lowlatency-origin-wza-07/src-4506?wUzz3Tsnestarttime=1609777218&wUzz3Tsneendtime=1609781100&wUzz3Tsnehash=PN0KNFTOB-fyV9qdN2wFj5fZ0r74DtGfSdcJNwsh5Oc="

@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"github.com/bal3000/BalStreamer.API/infrastructure"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/labstack/echo/v4"
 )
@@ -14,12 +14,12 @@ const routingKey string = "chromecast-key"
 
 // CastHandler - controller for casting to chromecast
 type CastHandler struct {
-	RabbitMQ     messaging.RabbitMQ
+	RabbitMQ     infrastructure.RabbitMQ
 	ExchangeName string
 }
 
 // NewCastHandler - constructor to return new controller while passing in dependencies
-func NewCastHandler(rabbit messaging.RabbitMQ, en string) *CastHandler {
+func NewCastHandler(rabbit infrastructure.RabbitMQ, en string) *CastHandler {
 	return &CastHandler{RabbitMQ: rabbit, ExchangeName: en}
 }
 

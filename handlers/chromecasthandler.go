@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/bal3000/BalStreamer.API/infrastructure"
 	"log"
 	"net/http"
 
-	"github.com/bal3000/BalStreamer.API/messaging"
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -22,12 +22,12 @@ var (
 
 // ChromecastHandler the controller for the websockets
 type ChromecastHandler struct {
-	RabbitMQ  messaging.RabbitMQ
+	RabbitMQ  infrastructure.RabbitMQ
 	QueueName string
 }
 
 // NewChromecastHandler creates a new ref to chromecast controller
-func NewChromecastHandler(rabbit messaging.RabbitMQ, qn string) *ChromecastHandler {
+func NewChromecastHandler(rabbit infrastructure.RabbitMQ, qn string) *ChromecastHandler {
 	return &ChromecastHandler{RabbitMQ: rabbit, QueueName: qn}
 }
 
