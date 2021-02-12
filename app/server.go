@@ -22,10 +22,9 @@ func NewServer(rabbit infrastructure.RabbitMQ, r *mux.Router, config infrastruct
 }
 
 func (s *Server) Run() error {
+	s.Router.Use(mux.CORSMethodMiddleware(s.Router))
 	// Routes
 	s.SetRoutes()
-
-	s.Router.Use(mux.CORSMethodMiddleware(s.Router))
 
 	srv := &http.Server{
 		Addr: "0.0.0.0:8080",
@@ -39,6 +38,7 @@ func (s *Server) Run() error {
 	// Start server
 	// Run our server in a goroutine so that it doesn't block.
 	go func() {
+		log.Println("Started Server on port 8080")
 		if err := srv.ListenAndServe(); err != nil {
 			log.Println(err)
 		}

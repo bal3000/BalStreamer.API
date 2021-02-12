@@ -22,6 +22,7 @@ func NewLiveStreamHandler(liveURL string, key string) *LiveStreamHandler {
 
 // GetFixtures - Gets the fixtures for the given sport and date range
 func (handler *LiveStreamHandler) GetFixtures(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("content-type", "application/json")
 	vars := mux.Vars(req)
 	sportType := vars["sportType"]
 	fromDate := vars["fromDate"]
@@ -44,6 +45,7 @@ func (handler *LiveStreamHandler) GetFixtures(res http.ResponseWriter, req *http
 	if len(*fixtures) == 0 {
 		http.Error(res, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 	}
+
 	res.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(res).Encode(*fixtures); err != nil {
 		log.Fatalln(err)
@@ -52,6 +54,7 @@ func (handler *LiveStreamHandler) GetFixtures(res http.ResponseWriter, req *http
 
 // GetStreams gets the streams for the fixture
 func (handler *LiveStreamHandler) GetStreams(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("content-type", "application/json")
 	vars := mux.Vars(req)
 	timerID := vars["timerId"]
 
@@ -61,7 +64,7 @@ func (handler *LiveStreamHandler) GetStreams(res http.ResponseWriter, req *http.
 	logErrors(err)
 
 	request.Header.Add("APIKey", handler.apiKey)
-	response, err := client.Do(req)
+	response, err := client.Do(request)
 	logErrors(err)
 	defer response.Body.Close()
 

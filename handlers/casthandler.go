@@ -26,6 +26,7 @@ func NewCastHandler(rabbit infrastructure.RabbitMQ, en string) *CastHandler {
 // CastStream - streams given data to given chromecast
 func (handler *CastHandler) CastStream(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("content-type", "application/json")
 	castCommand := new(models.StreamToCast)
 
 	if err := json.NewDecoder(req.Body).Decode(castCommand); err != nil {
@@ -47,6 +48,7 @@ func (handler *CastHandler) CastStream(res http.ResponseWriter, req *http.Reques
 // StopStream endpoint sends the command to stop the stream on the given chromecast
 func (handler *CastHandler) StopStream(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("content-type", "application/json")
 	stopStreamCommand := new(models.StopPlayingStream)
 
 	if err := json.NewDecoder(req.Body).Decode(stopStreamCommand); err != nil {

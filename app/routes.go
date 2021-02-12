@@ -8,7 +8,6 @@ import (
 
 // SetRoutes creates the handlers and routes for those handlers
 func (s *Server) SetRoutes() {
-	s.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 	// Handlers
 	cast := handlers.NewCastHandler(s.RabbitMQ, s.Config.ExchangeName)
 	chrome := handlers.NewChromecastHandler(s.RabbitMQ, s.Config.QueueName)
@@ -17,6 +16,8 @@ func (s *Server) SetRoutes() {
 	CastRoutes(s.Router, cast)
 	ChromecastRoutes(s.Router, chrome)
 	LiveStreamRoutes(s.Router, live)
+
+	s.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 }
 
 // CastRoutes sets up the routes for the cast handler
