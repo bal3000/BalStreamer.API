@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/bal3000/BalStreamer.API/infrastructure"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/bal3000/BalStreamer.API/models"
-	"github.com/labstack/echo/v4"
 )
 
 const routingKey string = "chromecast-key"
@@ -24,12 +24,12 @@ func NewCastHandler(rabbit infrastructure.RabbitMQ, en string) *CastHandler {
 }
 
 // CastStream - streams given data to given chromecast
-func (handler *CastHandler) CastStream(c echo.Context) error {
+func (handler *CastHandler) CastStream(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	castCommand := new(models.StreamToCast)
 
-	if err := c.Bind(castCommand); err != nil {
+	if err := json.NewDecoder(req.Body).Decode(castCommand); err != nil {
 		log.Println(err)
-		return err
 	}
 
 	// Send to chromecast
@@ -41,16 +41,16 @@ func (handler *CastHandler) CastStream(c echo.Context) error {
 
 	go handler.RabbitMQ.SendMessage(routingKey, cast)
 
-	return c.NoContent(http.StatusNoContent)
+	res.WriteHeader(http.StatusNoContent)
 }
 
 // StopStream endpoint sends the command to stop the stream on the given chromecast
-func (handler *CastHandler) StopStream(c echo.Context) error {
+func (handler *CastHandler) StopStream(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Access-Control-Allow-Origin", "*")
 	stopStreamCommand := new(models.StopPlayingStream)
 
-	if err := c.Bind(stopStreamCommand); err != nil {
+	if err := json.NewDecoder(req.Body).Decode(stopStreamCommand); err != nil {
 		log.Println(err)
-		return err
 	}
 
 	// Send to chromecast
@@ -61,5 +61,5 @@ func (handler *CastHandler) StopStream(c echo.Context) error {
 
 	go handler.RabbitMQ.SendMessage(routingKey, cast)
 
-	return c.NoContent(http.StatusAccepted)
+	res.WriteHeader(http.StatusAccepted)
 }

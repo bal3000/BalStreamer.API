@@ -2,35 +2,38 @@ package app
 
 import (
 	"github.com/bal3000/BalStreamer.API/handlers"
-	"github.com/labstack/echo/v4"
+	"github.com/gorilla/mux"
+	"net/http"
 )
 
 // SetRoutes creates the handlers and routes for those handlers
 func (s *Server) SetRoutes() {
-	s.Echo.File("/", "public/index.html")
+	s.Router.PathPrefix("/").Handler(http.FileServer(http.Dir("public/")))
 	// Handlers
 	cast := handlers.NewCastHandler(s.RabbitMQ, s.Config.ExchangeName)
 	chrome := handlers.NewChromecastHandler(s.RabbitMQ, s.Config.QueueName)
 	live := handlers.NewLiveStreamHandler(s.Config.LiveStreamURL, s.Config.APIKey)
 
-	CastRoutes(s.Echo, cast)
-	ChromecastRoutes(s.Echo, chrome)
-	LiveStreamRoutes(s.Echo, live)
+	CastRoutes(s.Router, cast)
+	ChromecastRoutes(s.Router, chrome)
+	LiveStreamRoutes(s.Router, live)
 }
 
 // CastRoutes sets up the routes for the cast handler
-func CastRoutes(e *echo.Echo, cast *handlers.CastHandler) {
-	e.POST("/api/cast", cast.CastStream)
-	e.DELETE("/api/cast", cast.StopStream)
+func CastRoutes(r *mux.Router, cast *handlers.CastHandler) {
+	s := r.PathPrefix("/api/cast").Subrouter()
+	s.HandleFunc("/", cast.CastStream).Methods(http.MethodPost)
+	s.HandleFunc("/", cast.StopStream).Methods(http.MethodDelete)
 }
 
 // ChromecastRoutes sets up the routes for the chromecast handler
-func ChromecastRoutes(e *echo.Echo, chrome *handlers.ChromecastHandler) {
-	e.GET("/chromecasts", chrome.ChromecastUpdates)
+func ChromecastRoutes(r *mux.Router, chrome *handlers.ChromecastHandler) {
+	r.HandleFunc("/chromecasts", chrome.ChromecastUpdates).Methods(http.MethodGet)
 }
 
 // LiveStreamRoutes sets up the routes for the live streams handler
-func LiveStreamRoutes(e *echo.Echo, live *handlers.LiveStreamHandler) {
-	e.GET("/api/livestreams/:sportType/:fromDate/:toDate", live.GetFixtures)
-	e.GET("/api/livestreams/:timerId", live.GetStreams)
+func LiveStreamRoutes(r *mux.Router, live *handlers.LiveStreamHandler) {
+	s := r.PathPrefix("/api/livestreams").Subrouter()
+	s.HandleFunc("/{sportType}/{fromDate}/{toDate}", live.GetFixtures).Methods(http.MethodGet)
+	s.HandleFunc("/{timerId}", live.GetStreams).Methods(http.MethodGet)
 }

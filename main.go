@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/bal3000/BalStreamer.API/app"
 	"github.com/bal3000/BalStreamer.API/infrastructure"
-	"github.com/labstack/echo/v4"
+	"github.com/gorilla/mux"
 	"os"
 )
 
@@ -29,8 +29,8 @@ func run() error {
 	}
 	defer rabbit.CloseChannel()
 
-	e := echo.New()
+	r := mux.NewRouter()
 
-	server := app.NewServer(rabbit, e, config)
+	server := app.NewServer(rabbit, r, config)
 	return server.Run()
 }

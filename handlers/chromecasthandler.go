@@ -9,7 +9,6 @@ import (
 
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/gorilla/websocket"
-	"github.com/labstack/echo/v4"
 	"github.com/streadway/amqp"
 )
 
@@ -33,13 +32,13 @@ func NewChromecastHandler(rabbit infrastructure.RabbitMQ, qn string) *Chromecast
 }
 
 // ChromecastUpdates broadcasts a chromecast to all clients once found
-func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
+func (handler *ChromecastHandler) ChromecastUpdates(res http.ResponseWriter, req *http.Request) {
 	log.Println("Entered ws, sending current found chromecasts")
 
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
-	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	ws, err := upgrader.Upgrade(res, req, nil)
 	if err != nil {
-		return err
+		log.Fatalln(err)
 	}
 	defer ws.Close()
 
@@ -47,7 +46,7 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	for _, event := range chromecasts {
 		err = ws.WriteJSON(event)
 		if err != nil {
-			return err
+			log.Fatalln(err)
 		}
 	}
 
@@ -59,13 +58,10 @@ func (handler *ChromecastHandler) ChromecastUpdates(c echo.Context) error {
 	for msg := range handledMsgs {
 		err = ws.WriteJSON(msg)
 		if err != nil {
-			log.Println(err)
-			return err
+			log.Fatalln(err)
 		}
 	}
 	close(handledMsgs)
-
-	return err
 }
 
 func processMsgs(d amqp.Delivery) bool {
