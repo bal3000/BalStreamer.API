@@ -2,13 +2,14 @@ package app
 
 import (
 	"context"
-	"github.com/bal3000/BalStreamer.API/infrastructure"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/bal3000/BalStreamer.API/infrastructure"
+	"github.com/gorilla/mux"
 )
 
 type Server struct {
@@ -22,10 +23,10 @@ func NewServer(rabbit infrastructure.RabbitMQ, r *mux.Router, config infrastruct
 }
 
 func (s *Server) Run() error {
-	s.Router.Use(mux.CORSMethodMiddleware(s.Router))
 	// Routes
 	s.SetRoutes()
 
+	s.Router.Use(mux.CORSMethodMiddleware(s.Router))
 	srv := &http.Server{
 		Addr: "0.0.0.0:8080",
 		// Good practice to set timeouts to avoid Slowloris attacks.

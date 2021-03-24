@@ -3,9 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bal3000/BalStreamer.API/infrastructure"
 	"log"
 	"net/http"
+
+	"github.com/bal3000/BalStreamer.API/infrastructure"
 
 	"github.com/bal3000/BalStreamer.API/models"
 	"github.com/gorilla/websocket"
@@ -43,7 +44,10 @@ func (handler *ChromecastHandler) ChromecastUpdates(res http.ResponseWriter, req
 	defer ws.Close()
 
 	// send all chromecasts from last refresh to page
+
+	log.Printf("Current chromecasts, %v", len(chromecasts))
 	for _, event := range chromecasts {
+		log.Printf("sending chromecast, %s", event)
 		err = ws.WriteJSON(event)
 		if err != nil {
 			log.Fatalln(err)
@@ -85,27 +89,4 @@ func processMsgs(d amqp.Delivery) bool {
 	handledMsgs <- *event
 
 	return true
-}
-
-func contains(a []models.ChromecastEvent, x models.ChromecastEvent) bool {
-	for _, n := range a {
-		if x == n {
-			return true
-		}
-	}
-	return false
-}
-
-func find(a []models.ChromecastEvent, x models.ChromecastEvent) int {
-	for i, n := range a {
-		if x == n {
-			return i
-		}
-	}
-	return len(a)
-}
-
-func remove(s []models.ChromecastEvent, i int) []models.ChromecastEvent {
-	s[i] = s[len(s)-1]
-	return s[:len(s)-1]
 }

@@ -1,9 +1,10 @@
 package app
 
 import (
+	"net/http"
+
 	"github.com/bal3000/BalStreamer.API/handlers"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 // SetRoutes creates the handlers and routes for those handlers
@@ -23,8 +24,8 @@ func (s *Server) SetRoutes() {
 // CastRoutes sets up the routes for the cast handler
 func CastRoutes(r *mux.Router, cast *handlers.CastHandler) {
 	s := r.PathPrefix("/api/cast").Subrouter()
-	s.HandleFunc("/", cast.CastStream).Methods(http.MethodPost)
-	s.HandleFunc("/", cast.StopStream).Methods(http.MethodDelete)
+	s.HandleFunc("", cast.CastStream).Methods(http.MethodPost)
+	s.HandleFunc("", cast.StopStream).Methods(http.MethodDelete)
 }
 
 // ChromecastRoutes sets up the routes for the chromecast handler
@@ -35,6 +36,6 @@ func ChromecastRoutes(r *mux.Router, chrome *handlers.ChromecastHandler) {
 // LiveStreamRoutes sets up the routes for the live streams handler
 func LiveStreamRoutes(r *mux.Router, live *handlers.LiveStreamHandler) {
 	s := r.PathPrefix("/api/livestreams").Subrouter()
-	s.HandleFunc("/{sportType}/{fromDate}/{toDate}", live.GetFixtures).Methods(http.MethodGet)
-	s.HandleFunc("/{timerId}", live.GetStreams).Methods(http.MethodGet)
+	s.HandleFunc("/{sportType}/{fromDate}/{toDate}", live.GetFixtures).Methods(http.MethodGet, http.MethodOptions)
+	s.HandleFunc("/{timerId}", live.GetStreams).Methods(http.MethodGet, http.MethodOptions)
 }

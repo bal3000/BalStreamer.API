@@ -3,9 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 
 	"github.com/bal3000/BalStreamer.API/models"
 )
@@ -23,6 +24,12 @@ func NewLiveStreamHandler(liveURL string, key string) *LiveStreamHandler {
 // GetFixtures - Gets the fixtures for the given sport and date range
 func (handler *LiveStreamHandler) GetFixtures(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if req.Method == http.MethodOptions {
+		return
+	}
+
 	vars := mux.Vars(req)
 	sportType := vars["sportType"]
 	fromDate := vars["fromDate"]
@@ -55,6 +62,12 @@ func (handler *LiveStreamHandler) GetFixtures(res http.ResponseWriter, req *http
 // GetStreams gets the streams for the fixture
 func (handler *LiveStreamHandler) GetStreams(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "application/json")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	if req.Method == http.MethodOptions {
+		return
+	}
+
 	vars := mux.Vars(req)
 	timerID := vars["timerId"]
 
